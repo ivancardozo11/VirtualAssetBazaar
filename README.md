@@ -1,8 +1,9 @@
 # Virtual Asset Bazaar v1.0.0
 
-<div style="text-align: center;">
-  <img src="VAB.jpg" width="500" height="400" alt="Image">
-</div>
+
+<p align="center"> 
+ <img src="VAB.jpg" width="500" height="400" alt="Image">
+</p>
 <p align="center"><i>Le Marché Collectionnable de Léonore - NFT</i></p>
 
 <br><br><br>

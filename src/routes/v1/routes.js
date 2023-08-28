@@ -1,7 +1,9 @@
 import { Router } from 'express';
-// import syncContacts from '../../../controllers/syncController.js'
+import { createListingController, getListingController } from '../../controllers/listingsController.js';
 
 const router = Router();
 
-router.get('/ruta/mia' rutacontrolador);
+router.post('/listings', createListingController);
+router.get('/listings/:id', getListingController);
+
 export default router;
