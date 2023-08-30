@@ -4,6 +4,9 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cors from 'cors';
 import routes from './src/routes/v1/routes.js';
+// eslint-disable-next-line no-unused-vars
+import redisClient from './src/database/redis/redisConfig.js';
+
 dotenv.config();
 
 const app = express();

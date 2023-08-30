@@ -1,4 +1,10 @@
-import { createListing, getListing } from '../services/listingsService.js';
+import {
+    createListing,
+    getListing,
+    getAllListings,
+    updateListing,
+    deleteListing
+} from '../services/listingsService.js';
 
 export const createListingController = (req, res) => {
     try {
@@ -11,10 +17,10 @@ export const createListingController = (req, res) => {
     }
 };
 
-export const getListingController = (req, res) => {
+export const getListingController = async (req, res) => {
     try {
         const listingId = parseInt(req.params.id);
-        const listing = getListing(listingId);
+        const listing = await getListing(listingId);
 
         if (listing) {
             res.status(200).json(listing);
@@ -23,6 +29,49 @@ export const getListingController = (req, res) => {
         }
     } catch (error) {
         console.error(`Error retrieving listing: ${error.message}`);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const getAllListingsController = async (req, res) => {
+    try {
+        const listings = await getAllListings();
+        res.status(200).json(listings);
+    } catch (error) {
+        console.error(`Error retrieving all listings: ${error.message}`);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const updateListingController = (req, res) => {
+    try {
+        const listingId = parseInt(req.params.id);
+        const updatedData = req.body;
+        const updatedListing = updateListing(listingId, updatedData);
+
+        if (updatedListing) {
+            res.status(200).json(updatedListing);
+        } else {
+            res.status(404).json({ message: 'Listing not found' });
+        }
+    } catch (error) {
+        console.error(`Error updating listing: ${error.message}`);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const deleteListingController = (req, res) => {
+    try {
+        const listingId = parseInt(req.params.id);
+        const deletedListing = deleteListing(listingId);
+
+        if (deletedListing) {
+            res.status(200).json(deletedListing);
+        } else {
+            res.status(404).json({ message: 'Listing not found' });
+        }
+    } catch (error) {
+        console.error(`Error deleting listing: ${error.message}`);
         res.status(500).json({ error: 'Internal server error' });
     }
 };

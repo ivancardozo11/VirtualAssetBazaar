@@ -1,9 +1,16 @@
 import { Router } from 'express';
-import { createListingController, getListingController } from '../../controllers/listingsController.js';
+import * as listingsController from '../../controllers/listingsController.js';
 
 const router = Router();
+const ctrl = listingsController;
 
-router.post('/listings', createListingController);
-router.get('/listings/:id', getListingController);
+router.route('/listings')
+    .post(ctrl.createListingController)
+    .get(ctrl.getAllListingsController);
+
+router.route('/listings/:id')
+    .get(ctrl.getListingController)
+    .put(ctrl.updateListingController)
+    .delete(ctrl.deleteListingController);
 
 export default router;
