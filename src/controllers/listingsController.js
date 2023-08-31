@@ -13,7 +13,7 @@ export const createListingController = (req, res) => {
         res.status(201).json(newListing);
     } catch (error) {
         console.error(`Error creating listing: ${error.message}`);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: error.message });
     }
 };
 
@@ -29,7 +29,7 @@ export const getListingController = async (req, res) => {
         }
     } catch (error) {
         console.error(`Error retrieving listing: ${error.message}`);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: error.message });
     }
 };
 
@@ -39,15 +39,16 @@ export const getAllListingsController = async (req, res) => {
         res.status(200).json(listings);
     } catch (error) {
         console.error(`Error retrieving all listings: ${error.message}`);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: error.message });
     }
 };
 
-export const updateListingController = (req, res) => {
+export const updateListingController = async (req, res) => {
     try {
         const listingId = parseInt(req.params.id);
         const updatedData = req.body;
-        const updatedListing = updateListing(listingId, updatedData);
+
+        const updatedListing = await updateListing(listingId, updatedData);
 
         if (updatedListing) {
             res.status(200).json(updatedListing);
@@ -56,7 +57,7 @@ export const updateListingController = (req, res) => {
         }
     } catch (error) {
         console.error(`Error updating listing: ${error.message}`);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: error.message });
     }
 };
 
@@ -72,6 +73,6 @@ export const deleteListingController = (req, res) => {
         }
     } catch (error) {
         console.error(`Error deleting listing: ${error.message}`);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: error.message });
     }
 };

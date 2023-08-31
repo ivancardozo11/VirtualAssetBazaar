@@ -1,9 +1,9 @@
 import { validateListingData } from '../utils/validateListingData.js';
 import redisClient from '../database/redis/redisConfig.js';
-import {
-    cacheGetListing,
-    cacheStoreListing
-} from '../database/cache/cacheUtils.js';
+import * as cache from '../database/cache/cacheUtils.js';
+import * as numericValidation from '../utils/numericValidation.js';
+import * as dateValidation from '../utils/dateValidation.js';
+import * as auctionValidation from '../utils/auctionValidation.js';
 
 const listings = [];
 
@@ -14,6 +14,9 @@ export const createListing = (listingData) => {
         if (error) {
             throw new Error(`Invalid listing data: ${error.message}`);
         }
+        numericValidation.validateIsInteger(listingData.id);
+        auctionValidation.validateAuctionFieldsForFixedPrice(listingData.isAuction, listingData.auctionEndTime, listingData.startingPrice);
+        auctionValidation.validatePriceTypeForAuction(listingData.isAuction, listingData.priceType);
 
         if (listings.some((listing) => listing.id === listingData.id)) {
             throw new Error(`Listing with ID ${listingData.id} already exists`);
@@ -24,14 +27,28 @@ export const createListing = (listingData) => {
             title: listingData.title,
             description: listingData.description,
             price: listingData.price,
-            isAuction: listingData.isAuction
+            isAuction: listingData.isAuction,
+            startingPrice: listingData.startingPrice,
+            auctionEndTime: listingData.auctionEndTime,
+            priceType: listingData.priceType
         };
+
+        if (newListing.priceType === 'auction') {
+            numericValidation.validateStartingPriceNotNullAndPositive(newListing.startingPrice);
+            numericValidation.validatePositiveValue(newListing.price);
+            numericValidation.validateAuctionPriceGreaterThanOrEqual(newListing.price, newListing.startingPrice);
+            dateValidation.validateFutureDate(newListing.auctionEndTime);
+            dateValidation.validateDateNotNull(newListing.auctionEndTime);
+        } else if (newListing.priceType === 'fixed') {
+            numericValidation.validatePositiveValue(newListing.price);
+        } else {
+            throw new Error('Invalid price type');
+        }
 
         listings.push(newListing);
         redisClient.set(`listing:${newListing.id}`, JSON.stringify(newListing));
 
-        // Cache the newly created listing
-        cacheStoreListing(newListing.id, newListing);
+        cache.cacheStoreListing(newListing.id, newListing, process.env.CACHE_EXPIRATION_TIME);
 
         return newListing;
     } catch (error) {
@@ -55,46 +72,49 @@ export const getAllListings = async () => {
 
 export const getListing = async (listingId) => {
     try {
-        const redisListing = await cacheGetListing(listingId);
+        const redisListing = await cache.cacheGetListing(listingId);
         if (redisListing) {
             return redisListing;
         }
 
         const foundListing = listings.find((listing) => listing.id === listingId);
         if (foundListing) {
-            // Cache the listing for future use
-            await cacheStoreListing(listingId, foundListing);
+            await cache.cacheStoreListing(listingId, foundListing, process.env.CACHE_EXPIRATION_TIME);
             return foundListing;
         }
 
         const redisDatabaseListing = await redisClient.get(`listing:${listingId}`);
         if (redisDatabaseListing) {
             const parsedListing = JSON.parse(redisDatabaseListing);
-            await cacheStoreListing(listingId, parsedListing);
+            await cache.cacheStoreListing(listingId, parsedListing, process.env.CACHE_EXPIRATION_TIME);
             return parsedListing;
         }
 
-        return null;
+        throw new Error(`Listado no encontrado para el ID: ${listingId}`);
     } catch (error) {
-        throw new Error(`Failed to retrieve listing: ${error.message}`);
+        throw new Error(`Error al recuperar el listado: ${error.message}`);
     }
 };
 
-export const updateListing = (listingId, updatedData) => {
-    const foundIndex = listings.findIndex((listing) => listing.id === listingId);
+export const updateListing = async (listingId, updatedData) => {
+    try {
+        const redisListing = await redisClient.get(`listing:${listingId}`);
 
-    if (foundIndex === -1) {
-        throw new Error(`Listing not found for ID: ${listingId}`);
+        if (!redisListing) {
+            throw new Error(`Listing not found for ID: ${listingId}`);
+        }
+
+        const updatedListing = {
+            ...JSON.parse(redisListing),
+            ...updatedData
+        };
+
+        await redisClient.set(`listing:${listingId}`, JSON.stringify(updatedListing));
+
+        return updatedListing;
+    } catch (error) {
+        throw new Error(`Error updating listing: ${error.message}`);
     }
-
-    const updatedListing = {
-        ...listings[foundIndex],
-        ...updatedData
-    };
-
-    listings[foundIndex] = updatedListing;
-
-    return updatedListing;
 };
 
 export const deleteListing = (listingId) => {

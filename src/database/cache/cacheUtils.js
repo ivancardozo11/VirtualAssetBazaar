@@ -5,6 +5,7 @@ export const cacheGetListing = async (listingId) => {
     return JSON.parse(cachedListing);
 };
 
-export const cacheStoreListing = async (listingId, listing) => {
+export const cacheStoreListing = async (listingId, listing, expirationInSeconds) => {
     await redisClient.set(`cache:listing:${listingId}`, JSON.stringify(listing));
+    await redisClient.expire(`cache:listing:${listingId}`, expirationInSeconds);
 };
