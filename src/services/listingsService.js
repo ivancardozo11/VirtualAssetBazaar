@@ -14,36 +14,56 @@ export const createListing = (listingData) => {
         if (error) {
             throw new Error(`Invalid listing data: ${error.message}`);
         }
-        numericValidation.validateIsInteger(listingData.id);
-        auctionValidation.validateAuctionFieldsForFixedPrice(listingData.isAuction, listingData.auctionEndTime, listingData.startingPrice);
-        auctionValidation.validatePriceTypeForAuction(listingData.isAuction, listingData.priceType);
 
-        if (listings.some((listing) => listing.id === listingData.id)) {
-            throw new Error(`Listing with ID ${listingData.id} already exists`);
+        const {
+            nftContractAddress,
+            erc20CurrencyAddress,
+            nftContractId,
+            erc20CurrencyAmount,
+            title,
+            description,
+            price,
+            isAuction,
+            startingPrice,
+            auctionEndTime,
+            priceType
+        } = listingData;
+
+        if (
+            !nftContractAddress ||
+            !erc20CurrencyAddress ||
+            !nftContractId ||
+            !erc20CurrencyAmount ||
+            !title ||
+            !description ||
+            !price ||
+            !isAuction ||
+            !startingPrice ||
+            !auctionEndTime ||
+            !priceType
+        ) {
+            throw new Error('Missing required fields for listing data');
         }
+
+        numericValidation.validatePositiveValue(price);
+        numericValidation.validatePositiveValue(erc20CurrencyAmount);
+        dateValidation.validateFutureDate(auctionEndTime);
+        auctionValidation.validatePriceTypeForAuction(isAuction, priceType);
 
         const newListing = {
             id: Date.now(),
-            title: listingData.title,
-            description: listingData.description,
-            price: listingData.price,
-            isAuction: listingData.isAuction,
-            startingPrice: listingData.startingPrice,
-            auctionEndTime: listingData.auctionEndTime,
-            priceType: listingData.priceType
+            nftContractAddress,
+            erc20CurrencyAddress,
+            nftContractId,
+            erc20CurrencyAmount,
+            title,
+            description,
+            price,
+            isAuction,
+            startingPrice,
+            auctionEndTime,
+            priceType
         };
-
-        if (newListing.priceType === 'auction') {
-            numericValidation.validateStartingPriceNotNullAndPositive(newListing.startingPrice);
-            numericValidation.validatePositiveValue(newListing.price);
-            numericValidation.validateAuctionPriceGreaterThanOrEqual(newListing.price, newListing.startingPrice);
-            dateValidation.validateFutureDate(newListing.auctionEndTime);
-            dateValidation.validateDateNotNull(newListing.auctionEndTime);
-        } else if (newListing.priceType === 'fixed') {
-            numericValidation.validatePositiveValue(newListing.price);
-        } else {
-            throw new Error('Invalid price type');
-        }
 
         listings.push(newListing);
         redisClient.set(`listing:${newListing.id}`, JSON.stringify(newListing));
@@ -90,7 +110,7 @@ export const getListing = async (listingId) => {
             return parsedListing;
         }
 
-        throw new Error(`Listado no encontrado para el ID: ${listingId}`);
+        throw new Error(`Listing not found: ${listingId}`);
     } catch (error) {
         throw new Error(`Error al recuperar el listado: ${error.message}`);
     }
