@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as listingsController from '../../controllers/listingsController.js';
 import * as auctionController from '../../controllers/auctionController.js';
 import * as nftController from '../../controllers/nftController.js';
+import { checkTermsAccepted } from '../../utils/termsAccepted.js';
 
 const router = Router();
 const ctrl = listingsController;
@@ -17,14 +18,20 @@ router.route('/listings/:id')
     .put(ctrl.updateListingController)
     .delete(ctrl.deleteListingController);
 
-router.post('/auctions', auctCtrl.createAuctionController);
-router.get('/auctions/:auctionId', auctCtrl.getAuctionDetailsController);
-router.post('/auctions/:auctionId/bids', auctCtrl.placeBidController);
+router.post('/auctions', checkTermsAccepted,
+    auctCtrl.createAuctionController);
+router.get('/auctions/:auctionId', checkTermsAccepted,
+    auctCtrl.getAuctionDetailsController);
+router.post('/auctions/:auctionId/bids',
+    checkTermsAccepted, auctCtrl.placeBidController);
 
-router.post('/nfts', nftCtrl.createNFTController);
-router.get('/nfts', nftCtrl.getAllNFTsController);
-router.get('/nfts/:nftId', nftCtrl.getNFTDetailsController);
-router.put('/nfts/:nftId', nftCtrl.updateNFTController);
-router.delete('/nfts/:nftId', nftCtrl.deleteNFTController);
+router.route('/nfts')
+    .post(nftCtrl.createNFTController)
+    .get(nftCtrl.getAllNFTsController);
+
+router.route('/nfts/:nftId')
+    .get(nftCtrl.getNFTDetailsController)
+    .put(nftCtrl.updateNFTController)
+    .delete(nftCtrl.deleteNFTController);
 
 export default router;

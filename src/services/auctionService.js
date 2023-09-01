@@ -5,6 +5,12 @@ import * as validateFields from '../utils/validateListingData.js';
 import * as addressValidation from '../utils/addressValidation.js';
 import redisClient from '../database/redis/redisConfig.js';
 import { validateBid } from '../utils/bidValidation.js';
+import web3 from '../utils/web3Config.js';
+import SettlerABI from '../utils/SettlerABI.js';
+
+const settlerContractAddress = process.env.SETTLER_CONTRACT_ADDRESS;
+const settlerContractInstance = new web3.eth.Contract(SettlerABI, settlerContractAddress);
+const TestEthereumAddress = process.env.TEST_ETHEREUM_ADDRESS;
 
 export const createAuction = async (auctionData) => {
     try {
@@ -21,7 +27,8 @@ export const createAuction = async (auctionData) => {
             sellerWalletAddress,
             buyerWalletAddress,
             buyerSignature,
-            sellerSignature
+            sellerSignature,
+            termsAccepted
         } = auctionData;
 
         if (
@@ -37,10 +44,16 @@ export const createAuction = async (auctionData) => {
             !sellerWalletAddress ||
             !buyerWalletAddress ||
             !buyerSignature ||
-            !sellerSignature
+            !sellerSignature ||
+            termsAccepted === undefined
         ) {
             throw new Error('Missing required fields for auction data');
         }
+
+        if (typeof termsAccepted !== 'boolean') {
+            throw new Error('Invalid value for termsAccepted');
+        }
+
         addressValidation.validateEthereumWalletAddress(sellerWalletAddress);
         addressValidation.validateEthereumWalletAddress(buyerWalletAddress);
         addressValidation.validateNFTContractAddress(nftContractAddress);
@@ -128,7 +141,6 @@ export const placeBid = async (nftContractAddress, bidAmount, buyerSignature) =>
     }
 };
 
-// TODO: Implement endAuction logic using Settler contract
 export const endAuction = async (nftContractAddress, sellerSignature) => {
     try {
         const auctionDetails = await getAuctionDetailsById(nftContractAddress);
@@ -139,30 +151,26 @@ export const endAuction = async (nftContractAddress, sellerSignature) => {
 
         auctionValidation.validateBidSignature(sellerSignature, auctionDetails.sellerWalletAddress);
 
-        // Her goes a Settler contract instance and necessary functions
-        // const settlerContract = getSettlerContractInstance(); // remember to implement this
-        // eslint-disable-next-line no-unused-vars
-        const settlerContractt = null; // remember to implement this
+        const sellerWalletAddress = process.env.TEST_ETHEREUM_ADDRESS;
 
-        // // Call the function on the Settler contract to settle the trade
-        // const settleTransaction = await settlerContract.settleTrade(
-        //     auctionDetails.nftContractAddress,
-        //     auctionDetails.nftTokenId,
-        //     auctionDetails.buyerWalletAddress,
-        //     auctionDetails.erc20CurrencyAddress,
-        //     auctionDetails.Erc20CurrencyAmount,
-        //     auctionDetails.highestBid,
-        //     auctionDetails.buyerSignature,
-        //     sellerSignature
-        // );
+        const newSellerSignature = await web3.eth.sign('Seller is agreeing to end the auction', sellerWalletAddress);
 
-        // Once the trade is settled, you can remove the auction details from Redis
+        await settlerContractInstance.methods.finishAuction(
+            {
+                collectionAddress: nftContractAddress,
+                erc20Address: auctionDetails.erc20CurrencyAddress,
+                tokenId: auctionDetails.nftContractId,
+                bid: auctionDetails.highestBid
+            },
+            auctionDetails.buyerSignature,
+            newSellerSignature
+        ).send({ from: TestEthereumAddress, gas: 'auto' });
+
         await redisClient.del(`auction:${nftContractAddress}`);
 
         return {
             success: true,
-            message: 'Auction successfully ended',
-            // transactionHash: settleTransaction.transactionHash
+            message: 'Auction successfully ended'
         };
     } catch (error) {
         throw new Error(`Failed to end auction: ${error.message}`);
