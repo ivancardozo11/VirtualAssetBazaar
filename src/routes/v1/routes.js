@@ -24,6 +24,8 @@ router.get('/auctions/:auctionId', checkTermsAccepted,
     auctCtrl.getAuctionDetailsController);
 router.post('/auctions/:auctionId/bids',
     checkTermsAccepted, auctCtrl.placeBidController);
+router.post('/nfts/:nftId/purchase',
+    nftCtrl.purchaseTokenController);
 
 router.route('/nfts')
     .post(nftCtrl.createNFTController)

@@ -89,6 +89,46 @@ export const getAllNFTs = async () => {
     }
 };
 
+export const purchaseToken = async (nftId, buyerWalletAddress) => {
+    try {
+        const nft = await getNFTById(nftId);
+
+        if (!nft) {
+            throw new Error(`NFT with ID ${nftId} not found`);
+        }
+
+        if (nft.priceType !== 'fixed') {
+            throw new Error('This token is not available for direct purchase');
+        }
+
+        if (nft.isAuction) {
+            throw new Error('This token is currently in auction');
+        }
+
+        const buyerBalance = 1000;
+        const tokenPrice = nft.price;
+
+        if (buyerBalance < tokenPrice) {
+            throw new Error('Insufficient funds to purchase the token');
+        }
+
+        const sellerWalletAddress = nft.sellerWalletAddress;
+        console.log(`Funds transferred from ${buyerWalletAddress} to ${sellerWalletAddress}`);
+
+        console.log(`Token with ID ${nftId} has been purchased by ${buyerWalletAddress}`);
+
+        return {
+            success: true,
+            message: 'Token purchased successfully'
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: `Failed to purchase token: ${error.message}`
+        };
+    }
+};
+
 export const deleteNFT = async (nftId) => {
     try {
         const nftKey = `nft:${nftId}`;

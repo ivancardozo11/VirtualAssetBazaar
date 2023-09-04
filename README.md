@@ -35,7 +35,7 @@ VirtualAssetBazaar is a technological platform designed to facilitate the transa
 ```sh
 https://redis.io/docs/getting-started/installation/
 ```
-After this, fot linux subsystem for windows:
+After this, for linux subsystem for windows:
 ```sh
 sudo service redis-server start
 ```
@@ -93,7 +93,7 @@ Create the Docker image:
   docker build -t virtualbazaar .
 ```
 
-* *This will run our docker image.*
+* *This will create our docker image.*
 
 Run the container:
 
@@ -104,95 +104,6 @@ Run the container:
 * *This is just for development purposes, you can see `Dockerfile` file for more details.*
 
 
-# HTTP petitions you can run on Postman:
-
-## To CREATE a listing:
-
-Set Postman to POST with this url:
-
-```sh
-  http://localhost:3000/api/v1/listings
-```
-
-Then configure the `Body` to `raw` and make sure it returns `JSON` as response.
-
-After that, create a JSON that files all required fields:
-```sh
-{
-  "title": "My list",
-  "description": "List description",
-  "price": 100,
-  "isAuction": false
-}
-```
-*This is an example, the JSON will be updated adding possible new required fields. In this commit, code works with this JSON.*
-
-The POST request should return:
-```sh
-{
-    "id": 1234567890123,
-    "title": "Mi list",
-    "description": "List description",
-    "price": 100,
-    "isAuction": false
-}
-```
-
-* *This is an example id, and just example data.*
-* *Make sure to write numbers where numbers go, and text, where you see text string on this JSON otherwise will not work.*
-
-# To see listings by id:
-
-Set Postman to GET with this url:
-
-```sh
-  http://localhost:3000/api/v1/listings/copyIDhere
-```
-* *If there's no listings server will throw a message telling you.*
-
-# To see all listings:
-
-Set Postman to GET with this url:
-
-```sh
-  http://localhost:3000/api/v1/listings/
-```
-* *If there's no listings server will throw a message telling you.*
-
-# To UPDATE a listing:
-
-Set the HTTP method to PUT, and insert this url:
-
-```sh
-  http://localhost:3000/api/v1/listings/IDnumber
-```
-After this go to Headers and set the Headers to Key `Content-Type` and Value to `application/json`.
-
-Then insert the new json with the new fields updated(if the listing exist):
-
-```sh
-  {
-    "id": 1111112222,
-    "title": "New title updated",
-    "description": "New description updated",
-    "price": 150,
-    "isAuction": true
-}
-```
-
-* *Make sure `Body` is configured to `raw` and its parsing to `JSON`.*
-
-# To DELETE the listing:
-
-Set the HTTP method to DELETE inside Postman and insert the following url:
-
-```sh
-http://localhost:3000/api/v1/listings/IDnumber
-```
-* *Id number should be an existing id listed*
-
-Then, press SEND and the selected listing should be eliminated .
-
 # See VirtualBazaar code demo:
 
 - *Virtual Bazaar link goes here* 
@@ -200,7 +111,57 @@ Then, press SEND and the selected listing should be eliminated .
 # See VirtualBazaar code documentation:
 * *This document still in development* ☺
 <p>
-  <a href="https://docs.google.com/document/d/1RjNlJgQHLSLyZ3Y6WRuQCP5nKYYOUX-1hZjWnutg_ro/edit?usp=sharing" target="_blank">
+  <a href="https://docs.google.com/document/d/1RjNlJgQHLSLyZ3Y6WRuQCP5nKYYOUX-1hZjWnutg_ro/" target="_blank">
    Link to code documentation
   </a>
 </p>
+
+# Bare minimum requirements:
+
+* *This sections takes you to documents where it shows a flow of how is expected the code to bare each requirement:*
+
+## REST API to allow users to list their NFTs with fixed price or as an auction.
+<p>
+  <a href="https://docs.google.com/document/d/12wU-UzzqWC37Ia4gnSZAcexOUmkFVpWvpxhxEe096Uk" target="_blank">
+    Creating a Listing with Fixed Price Flow:
+  </a>
+</p>
+
+<p>
+  <a href="https://docs.google.com/document/d/1WMaDQy157rDQ07YCgoZ9J4o-VtSQp2WFRZcYG8vW808" target="_blank">
+   Creating a Listing with Auction Price Flow:
+  </a>
+</p>
+
+## REST API to allow users to place bids on auctions or to purchase a token
+<p>
+  <a href="https://docs.google.com/document/d/1bDp0wfacVY82D7D9o6yxXWEy1fQEuz-He8CvQq40viU" target="_blank">
+    Placing Bids on Auctions Flow:
+  </a>
+</p>
+
+<p>
+  <a href="https://docs.google.com/document/d/1NbjSrYLPQVHDGjlv7SqwNYGHc2VAFXYZ9km7AHFE3cg" target="_blank">
+   Purchasing a Token Flow
+  </a>
+</p>
+
+## Use Postman to simulate User A & User B
+
+<p>
+  <a href="https://docs.google.com/document/d/1q1vLbFm-niE6eM1VpSUaf0XsL_2-n3cOmWM9MYb303I" target="_blank">
+   Flow from user A to B
+  </a>
+</p>
+
+## Flow of auctions being finished.
+<p>
+  <a href="https://docs.google.com/document/d/1hOnhVVN-BTtDdUnIHz3zYhVQ5mf_A1jcj1RIwNiqdF0" target="_blank">
+   Once users agree on terms through the APIs, send the transaction from
+the backend to settle the trade (calling finishAuction(...args))
+  </a>
+</p>
+
+
+
+
