@@ -2,7 +2,7 @@ import * as auctionValidation from '../utils/auctionValidation.js';
 import * as dateValidation from '../utils/dateValidation.js';
 import * as numericValidation from '../utils/numericValidation.js';
 import * as validateFields from '../utils/validateListingData.js';
-import * as addressValidation from '../utils/addressValidation.js';
+import * as addressValidation from '../utils/adressValidation.js';
 import redisClient from '../database/redis/redisConfig.js';
 import { validateBid } from '../utils/bidValidation.js';
 import web3 from '../utils/web3Config.js';
@@ -10,7 +10,7 @@ import SettlerABI from '../utils/SettlerABI.js';
 
 const settlerContractAddress = process.env.SETTLER_CONTRACT_ADDRESS;
 const settlerContractInstance = new web3.eth.Contract(SettlerABI, settlerContractAddress);
-const TestEthereumAddress = process.env.TEST_ETHEREUM_ADDRESS;
+const TestEthereumAddress = process.env.MY_ADDRESS;
 
 export const createAuction = async (auctionData) => {
     try {
@@ -151,7 +151,7 @@ export const endAuction = async (nftContractAddress, sellerSignature) => {
 
         auctionValidation.validateBidSignature(sellerSignature, auctionDetails.sellerWalletAddress);
 
-        const sellerWalletAddress = process.env.TEST_ETHEREUM_ADDRESS;
+        const sellerWalletAddress = process.env.MY_ADDRESS;
 
         const newSellerSignature = await web3.eth.sign('Seller is agreeing to end the auction', sellerWalletAddress);
 

@@ -1,5 +1,5 @@
 import { validateNFTFields } from '../utils/validateListingData.js';
-import { validateEthereumWalletAddress, validateNFTContractAddress } from '../utils/addressValidation.js';
+import { validateEthereumWalletAddress, validateNFTContractAddress } from '../utils/adressValidation.js';
 import { removeNFTFromList } from '../utils/removeNfts.js';
 import * as numericValidation from '../utils/numericValidation.js';
 import * as auctionValidation from '../utils/auctionValidation.js';
@@ -86,6 +86,33 @@ export const getAllNFTs = async () => {
         return allNFTs;
     } catch (error) {
         throw new Error(`Failed to get all NFTs: ${error.message}`);
+    }
+};
+
+export const updateNFT = async (nftId, updatedData) => {
+    try {
+        numericValidation.validateIsInteger(nftId);
+
+        const nftIndex = nfts.findIndex(nft => nft.id === nftId);
+        if (nftIndex === -1) {
+            throw new Error(`NFT with ID ${nftId} not found`);
+        }
+
+        const existingNFT = nfts[nftIndex];
+        if (updatedData.title) {
+            existingNFT.title = updatedData.title;
+        }
+        if (updatedData.description) {
+            existingNFT.description = updatedData.description;
+        }
+
+        nfts[nftIndex] = existingNFT;
+
+        await redisClient.set(`nft:${nftId}`, JSON.stringify(existingNFT));
+
+        return existingNFT;
+    } catch (error) {
+        throw new Error(`Failed to update NFT: ${error.message}`);
     }
 };
 
