@@ -1,5 +1,5 @@
 import { validateNFTFields } from '../utils/validateListingData.js';
-import { validateEthereumWalletAddress, validateNFTContractAddress } from '../utils/adressValidation.js';
+import { validateEthereumWalletAddress } from '../utils/adressValidation.js';
 import { removeNFTFromList } from '../utils/removeNfts.js';
 import * as numericValidation from '../utils/numericValidation.js';
 import * as auctionValidation from '../utils/auctionValidation.js';
@@ -17,7 +17,7 @@ export const createNFT = (nftData) => {
         }
         validateEthereumWalletAddress(nftData.sellerWalletAddress);
         validateEthereumWalletAddress(nftData.buyerWalletAddress);
-        validateNFTContractAddress(nftData.nftContractAddress);
+        validateEthereumWalletAddress(nftData.nftContractAddress);
         numericValidation.validateIsInteger(nftData.id);
         auctionValidation.validateAuctionFieldsForFixedPrice(nftData.isAuction, nftData.auctionEndTime, nftData.startingPrice);
 

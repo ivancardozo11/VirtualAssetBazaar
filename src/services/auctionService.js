@@ -31,25 +31,6 @@ export const createAuction = async (auctionData) => {
             termsAccepted
         } = auctionData;
 
-        if (
-            !nftContractAddress ||
-            !erc20CurrencyAddress ||
-            !nftContractId ||
-            !erc20CurrencyAmount ||
-            !startingPrice ||
-            !auctionEndTime ||
-            !priceType ||
-            !isAuction ||
-            BidAmount === undefined ||
-            !sellerWalletAddress ||
-            !buyerWalletAddress ||
-            !buyerSignature ||
-            !sellerSignature ||
-            termsAccepted === undefined
-        ) {
-            throw new Error('Missing required fields for auction data');
-        }
-
         if (typeof termsAccepted !== 'boolean') {
             throw new Error('Invalid value for termsAccepted');
         }
@@ -74,6 +55,11 @@ export const createAuction = async (auctionData) => {
 
         const auctionDetails = await getAuctionDetailsById(nftContractAddress);
         validateBid(auctionDetails, nftContractAddress, BidAmount);
+
+        // Validar que las firmas coincidan con las direcciones de billetera
+        if (buyerSignature !== buyerWalletAddress || sellerSignature !== sellerWalletAddress) {
+            throw new Error('Invalid signatures');
+        }
 
         const newAuction = {
             id: Date.now(),

@@ -10,7 +10,7 @@ const auctCtrl = auctionController;
 const nftCtrl = nftController;
 
 router.route('/listings')
-    .post(ctrl.createListingController)
+    .post(checkTermsAccepted, ctrl.createListingController)
     .get(ctrl.getAllListingsController);
 
 router.route('/listings/:id')
@@ -20,7 +20,7 @@ router.route('/listings/:id')
 
 router.post('/auctions', checkTermsAccepted,
     auctCtrl.createAuctionController);
-router.get('/auctions/:auctionId', checkTermsAccepted,
+router.get('/auctions/:auctionId',
     auctCtrl.getAuctionDetailsController);
 router.post('/auctions/:auctionId/bids',
     checkTermsAccepted, auctCtrl.placeBidController);

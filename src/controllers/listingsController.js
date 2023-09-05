@@ -6,10 +6,10 @@ import {
     deleteListing
 } from '../services/listingsService.js';
 
-export const createListingController = (req, res) => {
+export const createListingController = async (req, res) => {
     try {
         const listingData = req.body;
-        const newListing = createListing(listingData);
+        const newListing = await createListing(listingData);
         res.status(201).json(newListing);
     } catch (error) {
         console.error(`Error creating listing: ${error.message}`);

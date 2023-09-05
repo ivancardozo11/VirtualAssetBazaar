@@ -25,3 +25,9 @@ export const validateIsInteger = (value) => {
         throw new Error('Value must be an integer');
     }
 };
+
+export const validateStartingPriceGreaterThanPrice = (startingPrice, price) => {
+    if (startingPrice < price) {
+        throw new Error('Starting price must be equal to or greater than the price');
+    }
+};

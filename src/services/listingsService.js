@@ -4,10 +4,13 @@ import * as cache from '../database/cache/cacheUtils.js';
 import * as numericValidation from '../utils/numericValidation.js';
 import * as dateValidation from '../utils/dateValidation.js';
 import * as auctionValidation from '../utils/auctionValidation.js';
+import { validateEthereumWalletAddress } from '../utils/adressValidation.js';
+import { isNFTContractIdInUse, markNFTContractIdAsUsed } from '../utils/nftIdchecker.js';
+import { checkAuctionBids } from '../utils/checkAuctionBids.js';
 
 const listings = [];
 
-export const createListing = (listingData) => {
+export const createListing = async (listingData) => {
     try {
         const { error } = validateListingData(listingData);
 
@@ -19,34 +22,28 @@ export const createListing = (listingData) => {
             nftContractAddress,
             erc20CurrencyAddress,
             nftContractId,
-            erc20CurrencyAmount,
             title,
             description,
             price,
             isAuction,
             startingPrice,
             auctionEndTime,
-            priceType
+            priceType,
+            sellerSignature,
+            termsAccepted
         } = listingData;
 
-        if (
-            !nftContractAddress ||
-            !erc20CurrencyAddress ||
-            !nftContractId ||
-            !erc20CurrencyAmount ||
-            !title ||
-            !description ||
-            !price ||
-            !isAuction ||
-            !startingPrice ||
-            !auctionEndTime ||
-            !priceType
-        ) {
-            throw new Error('Missing required fields for listing data');
+        if (isAuction) {
+            await checkAuctionBids(nftContractId, startingPrice, erc20CurrencyAddress);
         }
 
+        if (await isNFTContractIdInUse(nftContractId)) {
+            throw new Error('This nftContractId is already in use');
+        }
+        numericValidation.validateStartingPriceGreaterThanPrice(startingPrice, price);
+        validateEthereumWalletAddress(nftContractAddress);
+        validateEthereumWalletAddress(erc20CurrencyAddress);
         numericValidation.validatePositiveValue(price);
-        numericValidation.validatePositiveValue(erc20CurrencyAmount);
         dateValidation.validateFutureDate(auctionEndTime);
         auctionValidation.validatePriceTypeForAuction(isAuction, priceType);
 
@@ -55,18 +52,20 @@ export const createListing = (listingData) => {
             nftContractAddress,
             erc20CurrencyAddress,
             nftContractId,
-            erc20CurrencyAmount,
             title,
             description,
             price,
             isAuction,
             startingPrice,
             auctionEndTime,
-            priceType
+            priceType,
+            sellerSignature,
+            termsAccepted
         };
 
         listings.push(newListing);
         redisClient.set(`listing:${newListing.id}`, JSON.stringify(newListing));
+        await markNFTContractIdAsUsed(nftContractId);
 
         cache.cacheStoreListing(newListing.id, newListing, process.env.CACHE_EXPIRATION_TIME);
 
