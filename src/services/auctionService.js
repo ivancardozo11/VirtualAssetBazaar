@@ -56,11 +56,6 @@ export const createAuction = async (auctionData) => {
         const auctionDetails = await getAuctionDetailsById(nftContractAddress);
         validateBid(auctionDetails, nftContractAddress, BidAmount);
 
-        // Validar que las firmas coincidan con las direcciones de billetera
-        if (buyerSignature !== buyerWalletAddress || sellerSignature !== sellerWalletAddress) {
-            throw new Error('Invalid signatures');
-        }
-
         const newAuction = {
             id: Date.now(),
             nftContractAddress,
