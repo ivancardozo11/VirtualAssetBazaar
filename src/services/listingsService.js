@@ -5,7 +5,7 @@ import * as numericValidation from '../utils/numericValidation.js';
 import * as dateValidation from '../utils/dateValidation.js';
 import * as auctionValidation from '../utils/auctionValidation.js';
 import { validateEthereumWalletAddress } from '../utils/adressValidation.js';
-import { isNFTContractIdInUse, markNFTContractIdAsUsed } from '../utils/nftIdchecker.js';
+import { getNFTDetailsFromDatabase } from '../utils/getNFTDetailsFromDatabase.js';
 import { checkAuctionBids } from '../utils/checkAuctionBids.js';
 
 const listings = [];
@@ -17,7 +17,6 @@ export const createListing = async (listingData) => {
         if (error) {
             throw new Error(`Invalid listing data: ${error.message}`);
         }
-
         const {
             nftContractAddress,
             erc20CurrencyAddress,
@@ -33,13 +32,15 @@ export const createListing = async (listingData) => {
             termsAccepted
         } = listingData;
 
+        const nftDetails = await getNFTDetailsFromDatabase(nftContractId);
+
+        if (nftDetails) {
+            throw new Error('NFT contract ID is already in use');
+        }
         if (isAuction) {
             await checkAuctionBids(nftContractId, startingPrice, erc20CurrencyAddress);
         }
 
-        if (await isNFTContractIdInUse(nftContractId)) {
-            throw new Error('This nftContractId is already in use');
-        }
         numericValidation.validateStartingPriceGreaterThanPrice(startingPrice, price);
         validateEthereumWalletAddress(nftContractAddress);
         validateEthereumWalletAddress(erc20CurrencyAddress);
@@ -64,10 +65,9 @@ export const createListing = async (listingData) => {
         };
 
         listings.push(newListing);
-        redisClient.set(`listing:${newListing.id}`, JSON.stringify(newListing));
-        await markNFTContractIdAsUsed(nftContractId);
+        redisClient.set(`listing:${newListing.nftContractId}`, JSON.stringify(newListing));
 
-        cache.cacheStoreListing(newListing.id, newListing, process.env.CACHE_EXPIRATION_TIME);
+        // cache.cacheStoreListing(newListing.id, newListing, process.env.CACHE_EXPIRATION_TIME);
 
         return newListing;
     } catch (error) {

@@ -123,17 +123,18 @@ Run the container:
 ## REST API to allow users to list their NFTs with fixed price or as an auction.
 <p>
   <a href="https://docs.google.com/document/d/12wU-UzzqWC37Ia4gnSZAcexOUmkFVpWvpxhxEe096Uk" target="_blank">
-    Creating a Listing with Fixed Price Flow:
-  </a>
-</p>
-
-<p>
-  <a href="https://docs.google.com/document/d/1WMaDQy157rDQ07YCgoZ9J4o-VtSQp2WFRZcYG8vW808" target="_blank">
-   Creating a Listing with Auction Price Flow:
+    Creating a Listing with Fixed and Auction Price Flow:
   </a>
 </p>
 
 ## REST API to allow users to place bids on auctions or to purchase a token
+
+<p>
+  <a href="https://docs.google.com/document/d/1WMaDQy157rDQ07YCgoZ9J4o-VtSQp2WFRZcYG8vW808" target="_blank">
+   Create an Auction on a listed NFT Flow:
+  </a>
+</p>
+
 <p>
   <a href="https://docs.google.com/document/d/1bDp0wfacVY82D7D9o6yxXWEy1fQEuz-He8CvQq40viU" target="_blank">
     Placing Bids on Auctions Flow:

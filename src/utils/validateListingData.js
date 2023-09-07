@@ -22,19 +22,18 @@ export const validateListingData = (listingData) => {
 // Validate auction fields  data types
 export const validateAuctionFields = (auctionData) => {
     const schema = Joi.object({
-        startingPrice: Joi.number().required(),
-        auctionEndTime: Joi.date().iso().required(),
-        priceType: Joi.string().valid('auction').required(),
-        isAuction: Joi.boolean().valid(true).required(),
-        BidAmount: Joi.number().required(),
         nftContractAddress: Joi.string().required(),
         erc20CurrencyAddress: Joi.string().required(),
         nftContractId: Joi.string().required(),
         Erc20CurrencyAmount: Joi.number().required(),
+        startingPrice: Joi.number().required(),
+        priceType: Joi.string().valid('auction').required(),
+        isAuction: Joi.boolean().valid(true).required(),
         sellerWalletAddress: Joi.string().required(),
         buyerWalletAddress: Joi.string().required(),
         buyerSignature: Joi.string().required(),
-        sellerSignature: Joi.string().required()
+        sellerSignature: Joi.string().required(),
+        termsAccepted: Joi.boolean().valid(true).required()
     });
 
     return schema.validate(auctionData);

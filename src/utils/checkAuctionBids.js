@@ -1,4 +1,4 @@
-import { getAuctionDetailsById } from '../services/auctionService.js'; // Asegúrate de importar correctamente la función
+import { getAuctionDetailsById } from '../services/auctionService.js';
 
 export const checkAuctionBids = async (nftContractId, startingPrice, erc20CurrencyAddress) => {
     const existingAuction = await getAuctionDetailsById(nftContractId);

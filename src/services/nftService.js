@@ -1,179 +1,95 @@
-import { validateNFTFields } from '../utils/validateListingData.js';
+import web3 from '../utils/web3Config.js';
 import { validateEthereumWalletAddress } from '../utils/adressValidation.js';
-import { removeNFTFromList } from '../utils/removeNfts.js';
-import * as numericValidation from '../utils/numericValidation.js';
-import * as auctionValidation from '../utils/auctionValidation.js';
-import * as cache from '../database/cache/cacheUtils.js';
 import redisClient from '../database/redis/redisConfig.js';
+import settlerABI from '../utils/SettlerABI.js';
+import mockErc20ABI from '../utils/mockErc20ABI.js';
+import dotenv from 'dotenv';
 
-const nfts = [];
+dotenv.config();
 
-export const createNFT = (nftData) => {
+const settlerContractAddress = process.env.SETTLER_CONTRACT_ADDRESS;
+const myMetamaskAddress = process.env.MY_ADDRESS;
+
+const settlerContract = new web3.eth.Contract(settlerABI, settlerContractAddress);
+
+const account = web3.eth.accounts.privateKeyToAccount(`0x${process.env.METAMASK_PRIVATE_KEY}`);
+web3.eth.accounts.wallet.add(account);
+const sellerWalletAddress = process.env.MOCKERC20_ADDRESS;
+
+export const purchaseToken = async (nftContractId, buyerWalletAddress) => {
     try {
-        const { error } = validateNFTFields(nftData);
+        validateEthereumWalletAddress(buyerWalletAddress);
 
-        if (error) {
-            throw new Error(`Invalid NFT data: ${error.message}`);
-        }
-        validateEthereumWalletAddress(nftData.sellerWalletAddress);
-        validateEthereumWalletAddress(nftData.buyerWalletAddress);
-        validateEthereumWalletAddress(nftData.nftContractAddress);
-        numericValidation.validateIsInteger(nftData.id);
-        auctionValidation.validateAuctionFieldsForFixedPrice(nftData.isAuction, nftData.auctionEndTime, nftData.startingPrice);
+        const nftDetailsKey = `listing:${nftContractId}`;
+        const nftDetails = await redisClient.get(nftDetailsKey);
 
-        const newNFT = {
-            id: Date.now(),
-            nftContractAddress: nftData.nftContractAddress,
-            erc20CurrencyMessage: nftData.erc20CurrencyMessage,
-            nftContractId: nftData.nftContractId,
-            title: nftData.title,
-            description: nftData.description,
-            price: nftData.price,
-            isAuction: nftData.isAuction,
-            startingPrice: nftData.startingPrice,
-            auctionEndTime: nftData.auctionEndTime,
-            priceType: nftData.priceType,
-            erc20CurrencyAmount: nftData.erc20CurrencyAmount
-        };
-
-        if (newNFT.priceType === 'auction') {
-            numericValidation.validateStartingPriceNotNullAndPositive(newNFT.startingPrice);
-        } else if (newNFT.priceType === 'fixed') {
-            numericValidation.validatePositiveValue(newNFT.price);
-        } else {
-            throw new Error('Invalid price type');
-        }
-
-        nfts.push(newNFT);
-
-        redisClient.set(`nft:${newNFT.id}`, JSON.stringify(newNFT));
-
-        cache.cacheStoreNFT(newNFT.id, newNFT, process.env.CACHE_EXPIRATION_TIME);
-
-        return newNFT;
-    } catch (error) {
-        throw new Error(`Failed to create NFT: ${error.message}`);
-    }
-};
-
-export const getNFTById = async (nftId) => {
-    try {
-        numericValidation.validateIsInteger(nftId);
-
-        const nftDetails = await redisClient.get(`nft:${nftId}`);
         if (!nftDetails) {
-            throw new Error(`NFT with ID ${nftId} not found`);
+            throw new Error(`NFT with contract ID ${nftContractId} not found`);
         }
 
-        return JSON.parse(nftDetails);
-    } catch (error) {
-        throw new Error(`Failed to get NFT details: ${error.message}`);
-    }
-};
-
-export const getAllNFTs = async () => {
-    try {
-        const allNFTs = [];
-
-        const redisKeys = await redisClient.keys('nft:*');
-        for (const redisKey of redisKeys) {
-            const nftDetails = await redisClient.get(redisKey);
-            if (nftDetails) {
-                allNFTs.push(JSON.parse(nftDetails));
-            }
-        }
-
-        return allNFTs;
-    } catch (error) {
-        throw new Error(`Failed to get all NFTs: ${error.message}`);
-    }
-};
-
-export const updateNFT = async (nftId, updatedData) => {
-    try {
-        numericValidation.validateIsInteger(nftId);
-
-        const nftIndex = nfts.findIndex(nft => nft.id === nftId);
-        if (nftIndex === -1) {
-            throw new Error(`NFT with ID ${nftId} not found`);
-        }
-
-        const existingNFT = nfts[nftIndex];
-        if (updatedData.title) {
-            existingNFT.title = updatedData.title;
-        }
-        if (updatedData.description) {
-            existingNFT.description = updatedData.description;
-        }
-
-        nfts[nftIndex] = existingNFT;
-
-        await redisClient.set(`nft:${nftId}`, JSON.stringify(existingNFT));
-
-        return existingNFT;
-    } catch (error) {
-        throw new Error(`Failed to update NFT: ${error.message}`);
-    }
-};
-
-export const purchaseToken = async (nftId, buyerWalletAddress) => {
-    try {
-        const nft = await getNFTById(nftId);
-
-        if (!nft) {
-            throw new Error(`NFT with ID ${nftId} not found`);
-        }
+        const nft = JSON.parse(nftDetails);
 
         if (nft.priceType !== 'fixed') {
             throw new Error('This token is not available for direct purchase');
         }
 
         if (nft.isAuction) {
-            throw new Error('This token is currently in auction');
+            throw new Error('This token is not currently in auction');
         }
+        const buyerBalanceWei = await web3.eth.getBalance(buyerWalletAddress);
+        const buyerBalanceEther = web3.utils.fromWei(buyerBalanceWei, 'ether');
+        const buyerBalance = parseFloat(buyerBalanceEther);
 
-        const buyerBalance = 1000;
-        const tokenPrice = nft.price;
+        const tokenPriceInWei = nft.price;
+        const tokenPriceInEther = web3.utils.fromWei(tokenPriceInWei.toString(), 'ether');
+        const tokenPrice = parseFloat(tokenPriceInEther);
 
         if (buyerBalance < tokenPrice) {
             throw new Error('Insufficient funds to purchase the token');
         }
 
-        const sellerWalletAddress = nft.sellerWalletAddress;
-        console.log(`Funds transferred from ${buyerWalletAddress} to ${sellerWalletAddress}`);
+        const gasPrice = await web3.eth.getGasPrice();
 
-        console.log(`Token with ID ${nftId} has been purchased by ${buyerWalletAddress}`);
+        const erc20Contract = new web3.eth.Contract(mockErc20ABI, myMetamaskAddress);
+
+        const nonce = await web3.eth.getTransactionCount(myMetamaskAddress, 'pending');
+
+        const txData = erc20Contract.methods.transfer(sellerWalletAddress, '330000').encodeABI();
+
+        const transferTransaction = {
+            nonce,
+            to: sellerWalletAddress,
+            gas: 2000000,
+            gasPrice,
+            data: txData
+        };
+
+        const signedTx = await web3.eth.accounts.signTransaction(transferTransaction, account.privateKey);
+
+        const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+        console.log(`Transaction hash for ERC20 transfer: ${receipt.transactionHash}`);
+
+        const txHash = await settlerContract.methods.finishAuction(
+            {
+                collectionAddress: nft.collectionAddress,
+                erc20Address: myMetamaskAddress,
+                tokenId: nftContractId,
+                bid: nft.price
+            },
+            nft.sellerSignature,
+            nft.ownerApprovedSig
+        ).send({ from: myMetamaskAddress, gas: 2000000 });
 
         return {
             success: true,
-            message: 'Token purchased successfully'
+            message: 'Token purchased successfully',
+            transactionHash: txHash.transactionHash
         };
     } catch (error) {
+        console.error('Error:', error);
         return {
             success: false,
             error: `Failed to purchase token: ${error.message}`
         };
-    }
-};
-
-export const deleteNFT = async (nftId) => {
-    try {
-        const nftKey = `nft:${nftId}`;
-        const nftDetails = await redisClient.get(nftKey);
-
-        if (!nftDetails) {
-            throw new Error(`NFT with ID ${nftId} not found`);
-        }
-
-        await redisClient.del(nftKey);
-
-        removeNFTFromList(nfts, nftId);
-
-        return {
-            success: true,
-            message: 'NFT deleted successfully'
-        };
-    } catch (error) {
-        throw new Error(`Failed to delete NFT: ${error.message}`);
     }
 };

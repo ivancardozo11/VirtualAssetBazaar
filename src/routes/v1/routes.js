@@ -17,22 +17,15 @@ router.route('/listings/:id')
     .get(ctrl.getListingController)
     .put(ctrl.updateListingController)
     .delete(ctrl.deleteListingController);
-
-router.post('/auctions', checkTermsAccepted,
-    auctCtrl.createAuctionController);
+router.route('/auctions')
+    .get(auctCtrl.getAllAuctionsController)
+    .post(checkTermsAccepted,
+        auctCtrl.createAuctionController);
 router.get('/auctions/:auctionId',
     auctCtrl.getAuctionDetailsController);
 router.post('/auctions/:auctionId/bids',
     checkTermsAccepted, auctCtrl.placeBidController);
+
 router.post('/nfts/:nftId/purchase', nftCtrl.purchaseTokenController);
-
-router.route('/nfts')
-    .post(nftCtrl.createNFTController)
-    .get(nftCtrl.getAllNFTsController);
-
-router.route('/nfts/:nftId')
-    .get(nftCtrl.getNFTByIdController)
-    .put(nftCtrl.updateNFTController)
-    .delete(nftCtrl.deleteNFTController);
 
 export default router;

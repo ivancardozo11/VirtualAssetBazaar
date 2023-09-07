@@ -2,9 +2,11 @@ import * as auctionValidation from '../utils/auctionValidation.js';
 import * as dateValidation from '../utils/dateValidation.js';
 import * as numericValidation from '../utils/numericValidation.js';
 import * as validateFields from '../utils/validateListingData.js';
+import * as cache from '../database/cache/cacheUtils.js';
 import * as addressValidation from '../utils/adressValidation.js';
+import { getExistingAuctionsForNFT } from '../utils/existingAuction.js';
+import { getNFTDetailsFromDatabase } from '../utils/getNFTDetailsFromDatabase.js';
 import redisClient from '../database/redis/redisConfig.js';
-import { validateBid } from '../utils/bidValidation.js';
 import web3 from '../utils/web3Config.js';
 import SettlerABI from '../utils/SettlerABI.js';
 
@@ -20,10 +22,8 @@ export const createAuction = async (auctionData) => {
             nftContractId,
             erc20CurrencyAmount,
             startingPrice,
-            auctionEndTime,
             priceType,
             isAuction,
-            BidAmount,
             sellerWalletAddress,
             buyerWalletAddress,
             buyerSignature,
@@ -31,21 +31,47 @@ export const createAuction = async (auctionData) => {
             termsAccepted
         } = auctionData;
 
-        if (typeof termsAccepted !== 'boolean') {
-            throw new Error('Invalid value for termsAccepted');
-        }
-
         addressValidation.validateEthereumWalletAddress(sellerWalletAddress);
         addressValidation.validateEthereumWalletAddress(buyerWalletAddress);
-        addressValidation.validateNFTContractAddress(nftContractAddress);
+        addressValidation.validateEthereumWalletAddress(nftContractAddress);
         addressValidation.validateEthereumWalletAddress(erc20CurrencyAddress);
-
         validateFields.validateAuctionFields(auctionData);
 
-        const auctionExists = await getAuctionDetailsById(nftContractAddress);
+        const nftDetails = await getNFTDetailsFromDatabase(nftContractId);
 
-        if (auctionExists) {
-            throw new Error(`Auction for NFT contract ${nftContractAddress} already exists`);
+        if (nftDetails && erc20CurrencyAmount < nftDetails.startingPrice) {
+            throw new Error('funds from your ERC20 wallet must be greater than the starting price of the listed auction');
+        }
+
+        if (!nftDetails) {
+            throw new Error('The NFT for that contract ID is not avaliable or doenst exist');
+        }
+
+        if (!nftDetails.isAuction && isAuction) {
+            throw new Error('Cannot start an auction for a fixed price listing');
+        }
+
+        const auctionEndTime = new Date(nftDetails.auctionEndTime);
+
+        const currentTime = new Date();
+
+        if (currentTime > auctionEndTime) {
+            throw new Error('This auction has expired');
+        }
+
+        if (nftContractAddress !== nftDetails.nftContractAddress ||
+            erc20CurrencyAddress !== nftDetails.erc20CurrencyAddress ||
+            sellerWalletAddress !== nftDetails.erc20CurrencyAddress ||
+            sellerSignature !== nftDetails.sellerSignature) {
+            throw new Error('NFT contract, ERC20 currency, seller wallet address, or seller signature does not match the listing');
+        }
+
+        if (nftContractAddress === erc20CurrencyAddress) {
+            throw new Error('NFT contract address and ERC20 currency address cannot be the same');
+        }
+
+        if (erc20CurrencyAmount < startingPrice) {
+            throw new Error('Not enough ERC20 currency to place a bid at the starting price');
         }
 
         numericValidation.validatePositiveValue(startingPrice);
@@ -53,8 +79,29 @@ export const createAuction = async (auctionData) => {
         dateValidation.validateFutureDate(auctionEndTime);
         auctionValidation.validatePriceTypeForAuction(isAuction, priceType);
 
-        const auctionDetails = await getAuctionDetailsById(nftContractAddress);
-        validateBid(auctionDetails, nftContractAddress, BidAmount);
+        // Obtén todas las subastas existentes para el mismo NFT
+        const existingAuctions = await getExistingAuctionsForNFT(nftContractId);
+
+        if (existingAuctions.some(auction =>
+            auction.buyerWalletAddress === buyerWalletAddress ||
+            auction.buyerSignature === buyerSignature
+        )) {
+            throw new Error('You have already participated in this auction');
+        }
+
+        if (buyerWalletAddress === sellerWalletAddress) {
+            throw new Error('Buyer and seller wallet addresses must be different');
+        }
+
+        if (sellerWalletAddress !== erc20CurrencyAddress) {
+            throw new Error('Seller wallet address must be the same as ERC20 currency address');
+        }
+
+        const maxAuctionAmount = existingAuctions.reduce((maxAmount, auction) => Math.max(maxAmount, auction.startingPrice), 0);
+
+        if (startingPrice <= maxAuctionAmount) {
+            throw new Error('The starting price must be higher than the highest bid in previous auctions');
+        }
 
         const newAuction = {
             id: Date.now(),
@@ -63,17 +110,18 @@ export const createAuction = async (auctionData) => {
             nftContractId,
             erc20CurrencyAmount,
             startingPrice,
-            auctionEndTime,
             priceType,
             isAuction,
-            BidAmount,
             sellerWalletAddress,
             buyerWalletAddress,
             buyerSignature,
-            sellerSignature
+            sellerSignature,
+            termsAccepted
         };
-        const redisKey = `auction:${newAuction.nftContractAddress}`;
+        const redisKey = `auction:${newAuction.id}`;
         await redisClient.set(redisKey, JSON.stringify(newAuction));
+
+        cache.cacheStoreAuction(newAuction.id, newAuction, process.env.CACHE_EXPIRATION_TIME);
 
         return newAuction;
     } catch (error) {
@@ -81,9 +129,24 @@ export const createAuction = async (auctionData) => {
     }
 };
 
-export const getAuctionDetailsById = async (nftContractAddress) => {
+export const getAllAuctions = async () => {
     try {
-        const auctionDetails = await redisClient.get(`auction:${nftContractAddress}`);
+        const keys = await redisClient.keys('auction:*');
+        const auctionDetailsPromises = keys.map(async (key) => {
+            const auctionDetails = await redisClient.get(key);
+            return JSON.parse(auctionDetails);
+        });
+
+        const auctionDetailsList = await Promise.all(auctionDetailsPromises);
+        return auctionDetailsList;
+    } catch (error) {
+        throw new Error(`Failed to get all auctions: ${error.message}`);
+    }
+};
+
+export const getAuctionDetailsById = async (auctionId) => {
+    try {
+        const auctionDetails = await redisClient.get(`auction:${auctionId}`);
 
         if (!auctionDetails) {
             return null;

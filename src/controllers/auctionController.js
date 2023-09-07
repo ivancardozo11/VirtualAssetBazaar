@@ -1,5 +1,6 @@
 import {
     createAuction,
+    getAllAuctions,
     getAuctionDetailsById,
     placeBid,
     endAuction
@@ -14,7 +15,14 @@ export const createAuctionController = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
-
+export const getAllAuctionsController = async (req, res) => {
+    try {
+        const auctions = await getAllAuctions();
+        res.status(200).json(auctions);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
 export const getAuctionDetailsController = async (req, res) => {
     try {
         const auctionId = req.params.auctionId;

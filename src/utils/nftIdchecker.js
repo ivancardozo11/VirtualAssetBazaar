@@ -1,6 +1,6 @@
 import redisClient from '../database/redis/redisConfig.js';
 
-// Checks if an nftId is already being used
+// Checks if an nftId is already being created
 export const isNFTContractIdInUse = async (nftContractId) => {
     const value = await redisClient.get(`nftContract:${nftContractId}`);
     return Boolean(value);
