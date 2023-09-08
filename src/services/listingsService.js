@@ -1,4 +1,4 @@
-import { validateListingData } from '../utils/validateListingData.js';
+import { validateListingData, ValidationError } from '../utils/validateListingData.js';
 import redisClient from '../database/redis/redisConfig.js';
 import * as cache from '../database/cache/cacheUtils.js';
 import * as numericValidation from '../utils/numericValidation.js';
@@ -29,8 +29,14 @@ export const createListing = async (listingData) => {
             auctionEndTime,
             priceType,
             sellerSignature,
-            termsAccepted
+            isERC721,
+            termsAccepted,
+            totalTokensForSale
         } = listingData;
+
+        if (totalTokensForSale > 1000) {
+            throw new Error('Total tokens for sale cannot exceed 1000');
+        }
 
         const nftDetails = await getNFTDetailsFromDatabase(nftContractId);
 
@@ -61,16 +67,21 @@ export const createListing = async (listingData) => {
             auctionEndTime,
             priceType,
             sellerSignature,
+            isERC721,
+            totalTokensForSale,
             termsAccepted
         };
 
         listings.push(newListing);
         redisClient.set(`listing:${newListing.nftContractId}`, JSON.stringify(newListing));
 
-        // cache.cacheStoreListing(newListing.id, newListing, process.env.CACHE_EXPIRATION_TIME);
+        cache.cacheStoreListing(newListing.id, newListing, process.env.CACHE_EXPIRATION_TIME);
 
         return newListing;
     } catch (error) {
+        if (error instanceof ValidationError) {
+            console.error(error.message);
+        }
         throw new Error(`Failed to create listing: ${error.message}`);
     }
 };

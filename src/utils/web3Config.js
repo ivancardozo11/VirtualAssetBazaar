@@ -14,10 +14,7 @@ async function connectAndCheckBalance () {
         console.log('Connected to Sepolia test network (Chain ID:', chainId + ')');
 
         const balance = await web3.eth.getBalance(MyAddress);
-        console.log('Account balance:', web3.utils.fromWei(balance, 'ether'), 'SepoliaETH');
-
-        const blockExplorerUrl = 'https://sepolia.etherscan.io';
-        console.log('Block explorer:', blockExplorerUrl);
+        console.log('Account balance in your Metamask seller wallet number 0x77...Ea5C:', web3.utils.fromWei(balance, 'ether'), 'SepoliaETH');
     } catch (error) {
         console.error('Error:', error);
     }

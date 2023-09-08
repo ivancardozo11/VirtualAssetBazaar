@@ -1,6 +1,13 @@
 import Joi from 'joi';
 
 // Validate listing fields data types
+export class ValidationError extends Error {
+    constructor (message) {
+        super(message);
+        this.name = 'ValidationError';
+    }
+}
+
 export const validateListingData = (listingData) => {
     const schema = Joi.object({
         nftContractAddress: Joi.string().required(),
@@ -14,10 +21,19 @@ export const validateListingData = (listingData) => {
         auctionEndTime: Joi.date().iso().optional(),
         priceType: Joi.string().valid('fixed', 'auction').optional(),
         sellerSignature: Joi.string().required(),
+        isERC721: Joi.boolean().required(),
+        totalTokensForSale: Joi.number().required(),
         termsAccepted: Joi.boolean().required()
     });
 
-    return schema.validate(listingData);
+    const { error } = schema.validate(listingData);
+
+    if (error) {
+        const errorMessages = error.details.map(detail => detail.message).join(', ');
+        throw new ValidationError(`Listing validation failed: ${errorMessages}`);
+    }
+
+    return true;
 };
 // Validate auction fields  data types
 export const validateAuctionFields = (auctionData) => {
