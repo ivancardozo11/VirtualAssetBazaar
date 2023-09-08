@@ -3,6 +3,7 @@ import web3Buyer from '../utils/web3ConfigBuyer.js';
 import { validateEthereumWalletAddress } from '../utils/adressValidation.js';
 import redisClient from '../database/redis/redisConfig.js';
 import mockErc20ABI from '../utils/mockErc20ABI.js';
+import mockErc721ABI from '../utils/mockErc721ABI.js';
 
 const SELLER_ADDRESS = process.env.MY_ADDRESS;
 const MOCK_ERC20_ADDRESS = process.env.MOCKERC20_ADDRESS;
