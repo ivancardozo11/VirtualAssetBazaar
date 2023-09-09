@@ -20,6 +20,7 @@ export const createListing = async (listingData) => {
         const {
             nftContractAddress,
             erc20CurrencyAddress,
+            owner,
             nftContractId,
             title,
             description,
@@ -30,12 +31,16 @@ export const createListing = async (listingData) => {
             priceType,
             sellerSignature,
             isERC721,
-            termsAccepted,
-            totalTokensForSale
+            totalTokensForSale,
+            sold,
+            termsAccepted
         } = listingData;
 
         if (totalTokensForSale > 1000) {
             throw new Error('Total tokens for sale cannot exceed 1000');
+        }
+        if (sold !== false) {
+            throw new Error('sold field cant be sold before its listed');
         }
 
         const nftDetails = await getNFTDetailsFromDatabase(nftContractId);
@@ -58,6 +63,7 @@ export const createListing = async (listingData) => {
             id: Date.now(),
             nftContractAddress,
             erc20CurrencyAddress,
+            owner,
             nftContractId,
             title,
             description,
@@ -69,6 +75,7 @@ export const createListing = async (listingData) => {
             sellerSignature,
             isERC721,
             totalTokensForSale,
+            sold,
             termsAccepted
         };
 

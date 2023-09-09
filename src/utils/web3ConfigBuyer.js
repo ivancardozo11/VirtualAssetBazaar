@@ -3,14 +3,14 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const buyerPrivateKey = process.env.BUYER_PRIVATE_KEY; // Clave privada del comprador desde el archivo .env
+const buyerPrivateKey = process.env.BUYER_PRIVATE_KEY;
 const infuraProjectId = process.env.INFURA_PROJECT_ID;
 const infuraRpcUrl = `https://sepolia.infura.io/v3/${infuraProjectId}`;
-const buyerAddress = process.env.BUYER_ADDRESS; // Dirección del comprador desde el archivo .env
+const buyerAddress = process.env.BUYER_ADDRESS;
 
 const web3Buyer = new Web3(new Web3.providers.HttpProvider(infuraRpcUrl));
 
-web3Buyer.eth.accounts.wallet.add(`0x${buyerPrivateKey}`); // Importar la clave privada del comprador
+web3Buyer.eth.accounts.wallet.add(`0x${buyerPrivateKey}`);
 
 async function connectAndCheckBalance () {
     try {
