@@ -12,6 +12,7 @@ export const validateListingData = (listingData) => {
     const schema = Joi.object({
         nftContractAddress: Joi.string().required(),
         erc20CurrencyAddress: Joi.string().required(),
+        owner: Joi.string().required(),
         nftContractId: Joi.number().required(),
         title: Joi.string().required(),
         description: Joi.string().required(),
@@ -23,7 +24,8 @@ export const validateListingData = (listingData) => {
         sellerSignature: Joi.string().required(),
         isERC721: Joi.boolean().required(),
         totalTokensForSale: Joi.number().required(),
-        termsAccepted: Joi.boolean().required()
+        termsAccepted: Joi.boolean().required(),
+        sold: Joi.boolean().required()
     });
 
     const { error } = schema.validate(listingData);
