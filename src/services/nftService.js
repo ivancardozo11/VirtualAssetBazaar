@@ -12,23 +12,45 @@ const GAS_LIMIT = 2000000;
 const account = web3.eth.accounts.privateKeyToAccount(`0x${process.env.METAMASK_PRIVATE_KEY}`);
 web3.eth.accounts.wallet.add(account);
 
-const retrieveNFTDetails = async (NFT_CONTRACT_ID) => {
+export const purchaseToken = async (NFT_CONTRACT_ID, BUYER_WALLET_ADDRESS) => {
+    try {
+        validateEthereumWalletAddress(BUYER_WALLET_ADDRESS);
+        const nft = await getNFTDetails(NFT_CONTRACT_ID);
+        validatePurchaseEligibility(nft);
+        const buyerBalance = await getBuyerBalance(BUYER_WALLET_ADDRESS);
+
+        if (buyerBalance < nft.price) {
+            throw new Error('Insufficient funds to purchase the token');
+        }
+        const tokenType = await getTokenType(nft.nftContractAddress, NFT_CONTRACT_ID);
+        if (tokenType === 'ERC721') {
+            await handleErc721Purchase(nft, NFT_CONTRACT_ID, BUYER_WALLET_ADDRESS, buyerBalance);
+        } else if (tokenType === 'ERC20') {
+            await handleErc20Purchase(nft, BUYER_WALLET_ADDRESS);
+        } else {
+            throw new Error('Unsupported token type.');
+        }
+
+        await markNFTAsSold(NFT_CONTRACT_ID);
+        return { success: true, message: 'Token purchased successfully' };
+    } catch (error) {
+        return { success: false, error: `Failed to purchase token: ${error.message}` };
+    }
+};
+const getNFTDetails = async (NFT_CONTRACT_ID) => {
     const nftDetailsKey = `listing:${NFT_CONTRACT_ID}`;
     const nftDetails = await redisClient.get(nftDetailsKey);
-
     if (!nftDetails) {
         throw new Error(`NFT with contract ID ${NFT_CONTRACT_ID} not found`);
     }
-
     return JSON.parse(nftDetails);
 };
 
-const validateNFTForPurchase = (NFT) => {
-    if (NFT.priceType !== 'fixed') {
+const validatePurchaseEligibility = (nft) => {
+    if (nft.priceType !== 'fixed') {
         throw new Error('This token is not available for direct purchase');
     }
-
-    if (NFT.isAuction) {
+    if (nft.isAuction) {
         throw new Error('This token is not currently in auction');
     }
 };
@@ -38,12 +60,102 @@ const getBuyerBalance = async (BUYER_WALLET_ADDRESS) => {
     return parseFloat(web3.utils.fromWei(buyerBalanceWei, 'ether'));
 };
 
-const sendErc20Transfer = async (TOTAL_TOKENS_FOR_SALE, BUYER_WALLET_ADDRESS) => {
+const sendErc20Tokens = async (TOTAL_TOKENS_FOR_SALE, BUYER_WALLET_ADDRESS) => {
     const erc20Contract = new web3.eth.Contract(mockErc20ABI, SELLER_ADDRESS);
     const nonce = await web3.eth.getTransactionCount(SELLER_ADDRESS, 'pending');
-    const txData = erc20Contract.methods.transfer(MOCK_ERC20_ADDRESS, TOTAL_TOKENS_FOR_SALE).encodeABI();
+    const data = erc20Contract.methods.transfer(MOCK_ERC20_ADDRESS, TOTAL_TOKENS_FOR_SALE).encodeABI();
 
-    const transferTransaction = {
+    const transferConfig = {
+        nonce,
+        to: BUYER_WALLET_ADDRESS,
+        gas: GAS_LIMIT,
+        gasPrice: await web3.eth.getGasPrice(),
+        data
+    };
+
+    const signedTx = await web3.eth.accounts.signTransaction(transferConfig, account.privateKey);
+    console.log(`The transaction between ${BUYER_WALLET_ADDRESS} Buying tokens to ${SELLER_ADDRESS} is signed now, check Tx Hash: ${signedTx.transactionHash} for more details`);
+    return await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+};
+
+export const isERC721Supported = async (CONTRACT_ADDRESSS) => {
+    try {
+        const contract = new web3.eth.Contract(mockErc721ABI, CONTRACT_ADDRESSS);
+        const isSupported = await contract.methods.supportsInterface('0x80ac58cd').call();
+        return isSupported;
+    } catch (error) {
+        console.error('Error checking ERC721:', error);
+        return false;
+    }
+};
+
+export const getTokenType = async (CONTRACT_ADDRESSS, NFT_CONTRACT_ID) => {
+    try {
+        const contract721 = new web3.eth.Contract(mockErc721ABI, CONTRACT_ADDRESSS);
+        await contract721.methods.ownerOf(NFT_CONTRACT_ID).call();
+        return 'ERC721';
+    } catch {
+        try {
+            const contract20 = new web3.eth.Contract(mockErc20ABI, CONTRACT_ADDRESSS);
+            await contract20.methods.totalSupply().call();
+            return 'ERC20';
+        } catch {
+            console.error('The contract does not seem to follow ERC721 or ERC20 standards.');
+            return 'UNKNOWN';
+        }
+    }
+};
+
+const handleErc721Purchase = async (nft, NFT_CONTRACT_ID, BUYER_WALLET_ADDRESS) => {
+    const transferTx = await buildErc721TransferTx(nft, NFT_CONTRACT_ID, BUYER_WALLET_ADDRESS);
+    console.log(`Transaction signed with for buying token with ID number ${NFT_CONTRACT_ID}`);
+    const receipt = await web3.eth.sendSignedTransaction(transferTx.rawTransaction);
+
+    console.log(`NFT with ID ${NFT_CONTRACT_ID} transferred from ${SELLER_ADDRESS} to ${BUYER_WALLET_ADDRESS}. Tx Hash: ${receipt.transactionHash}`);
+
+    const paymentAmountWei = web3Buyer.utils.toWei(nft.price.toString(), 'ether');
+    const paymentConfig = {
+        from: BUYER_WALLET_ADDRESS,
+        to: SELLER_ADDRESS,
+        value: paymentAmountWei,
+        gas: GAS_LIMIT
+    };
+
+    const paymentReceipt = await web3Buyer.eth.sendTransaction(paymentConfig);
+
+    console.log(`Buyer ${BUYER_WALLET_ADDRESS} transferred ${nft.price}ETH or ${paymentAmountWei} Wei. Tx Hash: ${paymentReceipt.transactionHash}`);
+};
+
+const handleErc20Purchase = async (nft, BUYER_WALLET_ADDRESS) => {
+    const receipt = await sendErc20Tokens(nft.totalTokensForSale, BUYER_WALLET_ADDRESS);
+    console.log(`ERC20 Tokens succesfully buyed by ${BUYER_WALLET_ADDRESS} to ${SELLER_ADDRESS} toTx Hash: ${receipt.transactionHash}`);
+
+    console.log(`App transferred ${nft.totalTokensForSale} tokens from ${SELLER_ADDRESS} to ${BUYER_WALLET_ADDRESS}`);
+    console.log('Backend is in dev mode; only checking if funds have been sent, not if they arrived.');
+
+    if (!receipt.transactionHash) {
+        throw new Error('Token purchase transaction failed');
+    }
+
+    const paymentAmountWei = web3Buyer.utils.toWei(nft.price.toString(), 'ether');
+    const paymentConfig = {
+        from: BUYER_WALLET_ADDRESS,
+        to: SELLER_ADDRESS,
+        value: paymentAmountWei,
+        gas: GAS_LIMIT
+    };
+
+    const paymentReceipt = await web3Buyer.eth.sendTransaction(paymentConfig);
+
+    console.log(`Buyer ${BUYER_WALLET_ADDRESS} send to ${SELLER_ADDRESS} the payment the amount of ${nft.price}ETH or ${paymentAmountWei} Wei. Tx Hash: ${paymentReceipt.transactionHash}`);
+};
+
+const buildErc721TransferTx = async (nft, NFT_CONTRACT_ID, BUYER_WALLET_ADDRESS) => {
+    const erc721Contract = new web3.eth.Contract(mockErc721ABI, nft.nftContractAddress);
+    const nonce = await web3.eth.getTransactionCount(SELLER_ADDRESS, 'pending');
+    const txData = erc721Contract.methods.transferFrom(SELLER_ADDRESS, BUYER_WALLET_ADDRESS, NFT_CONTRACT_ID).encodeABI();
+
+    const transferConfig = {
         nonce,
         to: BUYER_WALLET_ADDRESS,
         gas: GAS_LIMIT,
@@ -51,146 +163,27 @@ const sendErc20Transfer = async (TOTAL_TOKENS_FOR_SALE, BUYER_WALLET_ADDRESS) =>
         data: txData
     };
 
-    const signedTx = await web3.eth.accounts.signTransaction(transferTransaction, account.privateKey);
-    return await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+    return await web3.eth.accounts.signTransaction(transferConfig, account.privateKey);
 };
 
-export const checkIsERC721 = async (NFT_CONTRACT_ADDRESS) => {
+export const hasSufficientERC20Tokens = async (CONTRACT_ADDRESSS, TOTAL_TOKENS_FOR_SALE) => {
     try {
-        const contract = new web3.eth.Contract(mockErc721ABI, NFT_CONTRACT_ADDRESS);
-        const supportsERC721 = await contract.methods.supportsInterface('0x80ac58cd').call();
+        const erc20Contract = new web3.eth.Contract(mockErc20ABI, CONTRACT_ADDRESSS);
+        const balance = await erc20Contract.methods.balanceOf(SELLER_ADDRESS).call();
 
-        return supportsERC721;
-    } catch (error) {
-        console.error('Error checking ERC721:', error);
+        return Number(balance) >= TOTAL_TOKENS_FOR_SALE;
+    } catch (err) {
+        console.error('Error verifying ERC20 balance:', err);
         return false;
     }
 };
 
-export const checkTokenOwnership = async (NFT_CONTRACT_ADDRESS, TOKEN_ID, SELLER_ADDRESS) => {
-    try {
-        const erc721Contract = new web3.eth.Contract(mockErc721ABI, NFT_CONTRACT_ADDRESS);
-        const owner = await erc721Contract.methods.ownerOf(TOKEN_ID).call();
-
-        if (owner.toLowerCase() !== SELLER_ADDRESS.toLowerCase()) {
-            throw new Error('Seller is not the owner of the token ERC721 or NFT doesnt exist.');
-        }
-
-        return true;
-    } catch (error) {
-        console.error('Error al verificar la propiedad del token ERC721:', error);
-        return false;
-    }
-};
-
-export const purchaseToken = async (NFT_CONTRACT_ID, BUYER_WALLET_ADDRESS) => {
-    try {
-        validateEthereumWalletAddress(BUYER_WALLET_ADDRESS);
-        const nft = await retrieveNFTDetails(NFT_CONTRACT_ID);
-        validateNFTForPurchase(nft);
-
-        const buyerBalance = await getBuyerBalance(BUYER_WALLET_ADDRESS);
-
-        if (buyerBalance < nft.price) {
-            throw new Error('Insufficient funds to purchase the token');
-        }
-
-        const TOTAL_TOKENS_FOR_SALE = nft.totalTokensForSale;
-
-        const isERC721 = await checkIsERC721(nft.nftContractAddress);
-
-        if (isERC721) {
-            const checkOwner = checkTokenOwnership(nft.nftContractAddress, NFT_CONTRACT_ID, SELLER_ADDRESS);
-
-            if (!checkOwner) {
-                throw new Error('Token purchase failed: Seller is not the owner of the token');
-            }
-
-            if (SELLER_ADDRESS === BUYER_WALLET_ADDRESS) {
-                throw new Error('The buyer and the seller can\'t be the same.');
-            }
-
-            const erc721Contract = new web3.eth.Contract(mockErc721ABI, nft.nftContractAddress);
-
-            const transferTx = erc721Contract.methods.transferFrom(SELLER_ADDRESS, BUYER_WALLET_ADDRESS, NFT_CONTRACT_ID).encodeABI();
-            const nonce = await web3.eth.getTransactionCount(SELLER_ADDRESS, 'pending');
-
-            const txDetails = {
-                nonce,
-                to: nft.nftContractAddress,
-                gas: GAS_LIMIT,
-                gasPrice: await web3.eth.getGasPrice(),
-                data: transferTx
-            };
-            const signedTx = await web3.eth.accounts.signTransaction(txDetails, account.privateKey);
-            const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-
-            console.log(`NFT with ID ${NFT_CONTRACT_ID} has been successfully transferred from ${SELLER_ADDRESS} to ${BUYER_WALLET_ADDRESS}. Transaction Hash: ${receipt.transactionHash}`);
-
-            const desiredEthAmount = nft.price;
-
-            if (buyerBalance < desiredEthAmount) {
-                throw new Error('Insufficient funds to purchase the token');
-            }
-
-            const ethAmountToSend = web3Buyer.utils.toWei(desiredEthAmount.toString(), 'ether');
-            const paymentTransaction = {
-                from: BUYER_WALLET_ADDRESS,
-                to: SELLER_ADDRESS,
-                value: ethAmountToSend,
-                gas: GAS_LIMIT
-            };
-
-            const paymentReceipt = await web3Buyer.eth.sendTransaction(paymentTransaction);
-
-            console.log(`The Buyer with address:${BUYER_WALLET_ADDRESS} has successfully transferred the amount of ${desiredEthAmount}ETH or ${ethAmountToSend} Wei. Transaction Hash: ${paymentReceipt.transactionHash}`);
-        } else {
-            const receipt = await sendErc20Transfer(TOTAL_TOKENS_FOR_SALE, BUYER_WALLET_ADDRESS);
-            console.log(`Transaction hash for ERC20 transfer: ${receipt.transactionHash}`);
-            console.log(`App transfered ${TOTAL_TOKENS_FOR_SALE} tokens from ${SELLER_ADDRESS} to ${BUYER_WALLET_ADDRESS}`);
-            console.log('This backend is in development mode, we dont check if funds successfuly arrive, just check if funds have been send.');
-
-            if (!receipt.transactionHash) {
-                throw new Error('Token purchase transaction failed');
-            }
-
-            const desiredEthAmount = nft.price;
-            if (buyerBalance < desiredEthAmount) {
-                throw new Error('Insufficient funds to purchase the token');
-            }
-
-            const ethAmountToSend = web3Buyer.utils.toWei(desiredEthAmount.toString(), 'ether');
-            const transferTransaction = {
-                from: BUYER_WALLET_ADDRESS,
-                to: SELLER_ADDRESS,
-                value: ethAmountToSend,
-                gas: GAS_LIMIT
-            };
-
-            const ethTransferReceipt = await web3Buyer.eth.sendTransaction(transferTransaction);
-
-            console.log(`The Buyer with address:${BUYER_WALLET_ADDRESS} has transfered succesfully the amount of ${desiredEthAmount}ETH or ${ethAmountToSend} Wei`);
-            console.log(`Transaction hash for ETH sended to the seller: ${ethTransferReceipt.transactionHash} `);
-            console.log('Remember to check the hash in the block explorer if transaction was success');
-            console.log('We are only recording the hash for development purposes');
-        }
-        const currentNFT = JSON.parse(await redisClient.get(`listing:${NFT_CONTRACT_ID}`));
-
-        if (!currentNFT.sold) {
-            currentNFT.sold = true;
-
-            await redisClient.set(`llisting:sold:${NFT_CONTRACT_ID}`, JSON.stringify(currentNFT));
-        }
-
-        await redisClient.del(`listing:${NFT_CONTRACT_ID}`);
-        return {
-            success: true,
-            message: 'Token purchased successfully'
-        };
-    } catch (error) {
-        return {
-            success: false,
-            error: `Failed to purchase token: ${error.message}`
-        };
-    }
+const markNFTAsSold = async (NFT_CONTRACT_ID) => {
+    const originalKey = `listing:${NFT_CONTRACT_ID}`;
+    const nft = await getNFTDetails(NFT_CONTRACT_ID);
+    if (!nft) { throw new Error(`NFT with ID ${NFT_CONTRACT_ID} not found`); }
+    nft.sold = true;
+    const newKey = `listing:sold:${NFT_CONTRACT_ID}`;
+    await redisClient.set(newKey, JSON.stringify(nft));
+    await redisClient.del(originalKey);
 };
