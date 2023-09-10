@@ -11,7 +11,6 @@ export class ValidationError extends Error {
 export const validateListingData = (listingData) => {
     const schema = Joi.object({
         nftContractAddress: Joi.string().required(),
-        erc20CurrencyAddress: Joi.string().required(),
         owner: Joi.string().required(),
         nftContractId: Joi.number().required(),
         title: Joi.string().required(),
@@ -27,7 +26,6 @@ export const validateListingData = (listingData) => {
         termsAccepted: Joi.boolean().required(),
         sold: Joi.boolean().required()
     });
-
     const { error } = schema.validate(listingData);
 
     if (error) {
