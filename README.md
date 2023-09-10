@@ -103,13 +103,42 @@ Run the container:
 
 * *This is just for development purposes, you can see `Dockerfile` file for more details.*
 
+Run the container with specific image:
+
+```sh
+  docker run -d --name container_name image_name
+```
+
+* *This is just for development purposes, you can see `Dockerfile` file for more details.*
+
+Run the services with docker-compose:
+
+```sh
+ docker-compose up -d
+```
+
+* *This is just for development purposes, you can see `docker-compose` file for more details.*
+
+Alternatively, you can run this command to use a specific service:
+```sh
+ docker-compose up -d redis
+```
+
+or
+
+```sh
+ docker-compose up -d web
+```
+* *This is called web cause Docker automatically calls the services `{Directory_name}_{service_name}_{number}`*.
+
+   *running the service docker-compose has named virtualassetbazaar-web-1 to this service.*
 
 # See VirtualBazaar code demo:
 
 - *Virtual Bazaar link goes here* 
 
 # See VirtualBazaar code documentation:
-* *This document still in development* ☺
+* *This document still in development* 
 <p>
   <a href="https://docs.google.com/document/d/1RjNlJgQHLSLyZ3Y6WRuQCP5nKYYOUX-1hZjWnutg_ro/" target="_blank">
    Link to code documentation
