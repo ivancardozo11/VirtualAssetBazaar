@@ -33,6 +33,7 @@ export const purchaseToken = async (NFT_CONTRACT_ID, BUYER_WALLET_ADDRESS) => {
         await markNFTAsSold(NFT_CONTRACT_ID);
         return { success: true, message: 'Token purchased successfully' };
     } catch (error) {
+        console.log(error);
         return { success: false, error: `Failed to purchase token: ${error.message}` };
     }
 };
