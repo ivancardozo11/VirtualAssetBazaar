@@ -82,7 +82,7 @@ export const createListing = async (listingData) => {
         listings.push(newListing);
         redisClient.set(`listing:${newListing.nftContractId}`, JSON.stringify(newListing));
 
-        cache.cacheStoreListing(newListing.id, newListing, process.env.CACHE_EXPIRATION_TIME);
+        cache.cacheStoreListing(newListing.nftContractId, newListing, process.env.CACHE_EXPIRATION_TIME);
 
         return newListing;
     } catch (error) {
