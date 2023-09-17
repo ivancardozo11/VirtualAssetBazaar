@@ -1,13 +1,11 @@
 import Joi from 'joi';
+import * as numericValidation from '../utils/numericValidation.js';
+import * as validateWallet from '../utils/addressValidation.js';
+import * as dateValidation from '../utils/dateValidation.js';
+import * as auctionValidation from '../utils/auctionValidation.js';
+import * as errorHandling from '../utils/auctionErrorHandling.js';
 
 // Validate listing fields data types
-export class ValidationError extends Error {
-    constructor (message) {
-        super(message);
-        this.name = 'ValidationError';
-    }
-}
-
 export const validateListingData = (listingData) => {
     const schema = Joi.object({
         nftContractAddress: Joi.string().required(),
@@ -17,7 +15,7 @@ export const validateListingData = (listingData) => {
         description: Joi.string().required(),
         price: Joi.number().required(),
         isAuction: Joi.boolean().required(),
-        startingPrice: Joi.number().optional(),
+        bidAmount: Joi.number().optional(),
         auctionEndTime: Joi.date().iso().optional(),
         priceType: Joi.string().valid('fixed', 'auction').optional(),
         sellerSignature: Joi.string().required(),
@@ -26,24 +24,21 @@ export const validateListingData = (listingData) => {
         termsAccepted: Joi.boolean().required(),
         sold: Joi.boolean().required()
     });
-    const { error } = schema.validate(listingData);
 
-    if (error) {
-        const errorMessages = error.details.map(detail => detail.message).join(', ');
-        throw new ValidationError(`Listing validation failed: ${errorMessages}`);
-    }
-
-    return true;
+    const validationResult = schema.validate(listingData);
+    return errorHandling.handleJoiValidation(validationResult);
 };
+
 // Validate auction fields  data types
 export const validateAuctionFields = (auctionData) => {
     const schema = Joi.object({
         nftContractAddress: Joi.string().required(),
-        erc20CurrencyAddress: Joi.string().required(),
+        mockERC20Address: Joi.string().required(),
         nftContractId: Joi.string().required(),
-        Erc20CurrencyAmount: Joi.number().required(),
-        startingPrice: Joi.number().required(),
+        buyerFunds: Joi.number().required(),
+        bidAmount: Joi.number().required(),
         priceType: Joi.string().valid('auction').required(),
+        bids: Joi.array().required(),
         isAuction: Joi.boolean().valid(true).required(),
         sellerWalletAddress: Joi.string().required(),
         buyerWalletAddress: Joi.string().required(),
@@ -52,26 +47,34 @@ export const validateAuctionFields = (auctionData) => {
         termsAccepted: Joi.boolean().valid(true).required()
     });
 
-    return schema.validate(auctionData);
+    const validationResult = schema.validate(auctionData);
+    return errorHandling.handleJoiValidation(validationResult);
 };
 
-// Validate NFT fields data types
-export const validateNFTFields = (nftData) => {
-    const schema = Joi.object({
-        nftContractAddress: Joi.string().required(),
-        erc20CurrencyMessage: Joi.string().required(),
-        nftContractId: Joi.string().required(),
-        title: Joi.string().required(),
-        description: Joi.string().required(),
-        price: Joi.number().required(),
-        isAuction: Joi.boolean().required(),
-        startingPrice: Joi.number().optional(),
-        auctionEndTime: Joi.date().iso().optional(),
-        priceType: Joi.string().valid('fixed', 'auction').optional(),
-        erc20CurrencyAmount: Joi.number().required(),
-        sellerWalletAddress: Joi.string().required(),
-        buyerWalletAddress: Joi.string().required()
-    });
+export const validateInputData = (listingData) => {
+    const { error } = validateListingData(listingData);
+    if (error) throw new Error(`Invalid listing data: ${error.message}`);
 
-    return schema.validate(nftData);
+    validateTokenCount(listingData.totalTokensForSale);
+    validateNFTContractId(listingData.nftContractId);
+    validateSoldStatus(listingData.sold);
+
+    numericValidation.validateStartingPriceGreaterThanPrice(listingData.bidAmount, listingData.price);
+    validateWallet.validateEthereumWalletAddress(listingData.nftContractAddress);
+    validateWallet.validateEthereumWalletAddress(listingData.owner);
+    numericValidation.validatePositiveValue(listingData.price);
+    dateValidation.validateFutureDate(listingData.auctionEndTime);
+    auctionValidation.validatePriceTypeForAuction(listingData.isAuction, listingData.priceType);
+};
+
+const validateTokenCount = (totalTokensForSale) => {
+    if (totalTokensForSale > 1000) throw new Error('Total tokens for sale cannot exceed 1000');
+};
+
+const validateNFTContractId = (nftContractId) => {
+    if (nftContractId > 100000) throw new Error('Token ids cant have more than 100000 in number size');
+};
+
+const validateSoldStatus = (sold) => {
+    if (sold !== false) throw new Error('sold field cant be sold before its listed');
 };

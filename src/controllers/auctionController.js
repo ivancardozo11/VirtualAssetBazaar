@@ -1,7 +1,6 @@
 import {
     createAuction,
     getAllAuctions,
-    getAuctionDetailsById,
     placeBid,
     endAuction
 } from '../services/auctionService.js';
@@ -23,21 +22,10 @@ export const getAllAuctionsController = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
-export const getAuctionDetailsController = async (req, res) => {
-    try {
-        const auctionId = req.params.auctionId;
-        const auctionDetails = await getAuctionDetailsById(auctionId);
-        res.status(200).json(auctionDetails);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
 
 export const placeBidController = async (req, res) => {
     try {
-        const { auctionId, bidAmount } = req.body;
-
-        const response = await placeBid(auctionId, bidAmount);
+        const response = await placeBid(req.body);
 
         if (response.success) {
             return res.json({ message: 'Bid placed successfully' });
@@ -45,15 +33,16 @@ export const placeBidController = async (req, res) => {
             return res.status(response.statusCode).json({ error: response.error });
         }
     } catch (error) {
+        console.error(error);
         return res.status(500).json({ error: `Failed to place bid: ${error.message}` });
     }
 };
 
 export const endAuctionController = async (req, res) => {
     try {
-        const { auctionId } = req.params;
+        const { nftContractId, sellerSignature, sellerWalletAddress } = req.body;
 
-        const response = await endAuction(auctionId);
+        const response = await endAuction(nftContractId, sellerSignature, sellerWalletAddress);
 
         if (response.success) {
             return res.json({ message: 'Auction successfully ended' });
