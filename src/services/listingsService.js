@@ -62,7 +62,7 @@ export const getListing = async (listingId) => {
     try {
         return await redisStorage.fetchListingFromCacheOrDatabase(listingId);
     } catch (error) {
-        throw new Error(`Error al recuperar el listado: ${error.message}`);
+        throw new Error(`Error getting listing: ${error.message}`);
     }
 };
 

@@ -28,7 +28,7 @@ export const getAllAuctions = async () => {
 
         return [lastAuction];
     } catch (error) {
-        console.error('Erro getting the last auction', error);
+        console.error('Error getting the last auction', error);
         throw new Error('Could not get the last auction');
     }
 };
