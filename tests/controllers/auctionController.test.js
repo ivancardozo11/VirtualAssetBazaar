@@ -1,62 +1,105 @@
-// import sinon from 'sinon';
-// import { expect } from 'chai';
-// import * as auctionService from '../../src/services/auctionService.js';
-// import {
-//     createAuctionController,
-//     getAllAuctionsController,
-//     getAuctionDetailsController,
-//     placeBidController,
-//     endAuctionController
-// } from '../controllers/auctionController.js';
+import {
+    createAuctionController,
+    getAllAuctionsController,
+    placeBidController,
+    endAuctionController
+} from '../../src/controllers/auctionController';
 
-// describe('Auction Controller', () => {
-//     afterEach(() => {
-//         sinon.restore();
-//     });
+import {
+    createAuction,
+    getAllAuctions,
+    placeBid,
+    endAuction
+} from '../../src/services/auctionService';
 
-//     describe('createAuctionController', () => {
-//         it('should successfully create an auction', async () => {
-//             const mockReq = {
-//                 body: { /* datos de la subasta */ }
-//             };
-//             const mockRes = {
-//                 status: sinon.stub().returnsThis(),
-//                 json: sinon.spy()
-//             };
-//             sinon.stub(auctionService, 'createAuction').resolves({ /* respuesta exitosa */ });
+jest.mock('../../src/services/auctionService');
+jest.mock('../../src/database/redis/redisConfig.js', () => ({
+    __esModule: true,
+    default: {
+        set: jest.fn().mockResolvedValue(true),
+        get: jest.fn(),
+        del: jest.fn().mockResolvedValue(true),
+        expire: jest.fn().mockResolvedValue(true)
+    }
+}));
 
-//             await createAuctionController(mockReq, mockRes);
+describe('Auction Controllers', () => {
+    let mockReq, mockRes;
 
-//             expect(mockRes.status.calledWith(201)).to.be.true;
-//             expect(mockRes.json.calledOnce).to.be.true;
-//         });
+    beforeEach(() => {
+        jest.spyOn(console, 'error').mockImplementation(() => {});
 
-//         it('should handle creation error', async () => {
-//             const mockReq = {
-//                 body: { /* datos de la subasta */ }
-//             };
-//             const mockRes = {
-//                 status: sinon.stub().returnsThis(),
-//                 json: sinon.spy()
-//             };
-//             sinon.stub(auctionService, 'createAuction').rejects(new Error('Creation error'));
+        mockReq = {
+            body: {},
+            params: {}
+        };
 
-//             await createAuctionController(mockReq, mockRes);
+        mockRes = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis()
+        };
+    });
 
-//             expect(mockRes.status.calledWith(400)).to.be.true;
-//             expect(mockRes.json.calledOnce).to.be.true;
-//         });
-//     });
+    afterEach(() => {
+        jest.clearAllMocks();
+        console.error.mockRestore();
+    });
 
-//     // Aquí puedes agregar más tests para los demás controladores siguiendo el patrón anterior. Por ejemplo:
+    it('should create an auction successfully', async () => {
+        const mockAuctionData = { id: '123', name: 'Sample Auction' };
+        createAuction.mockResolvedValue(mockAuctionData);
 
-//     describe('getAllAuctionsController', () => {
-//         // ...
-//     });
+        await createAuctionController(mockReq, mockRes);
 
-//     describe('getAuctionDetailsController', () => {
-//         // ...
-//     });
+        expect(mockRes.status).toHaveBeenCalledWith(201);
+        expect(mockRes.json).toHaveBeenCalledWith(mockAuctionData);
+    });
 
-//     // Y así sucesivamente...
-// });
+    it('should get all auctions successfully', async () => {
+        const mockAuctions = [{ id: '123' }, { id: '456' }];
+        getAllAuctions.mockResolvedValue(mockAuctions);
+
+        await getAllAuctionsController(mockReq, mockRes);
+
+        expect(mockRes.status).toHaveBeenCalledWith(200);
+        expect(mockRes.json).toHaveBeenCalledWith(mockAuctions);
+    });
+
+    it('should place bid successfully', async () => {
+        const mockResponse = { success: true };
+        placeBid.mockResolvedValue(mockResponse);
+
+        await placeBidController(mockReq, mockRes);
+
+        expect(mockRes.json).toHaveBeenCalledWith({ message: 'Bid placed successfully' });
+    });
+
+    it('should handle failed bid placement', async () => {
+        const mockResponse = { success: false, statusCode: 400, error: 'Invalid bid amount' };
+        placeBid.mockResolvedValue(mockResponse);
+
+        await placeBidController(mockReq, mockRes);
+
+        expect(mockRes.status).toHaveBeenCalledWith(400);
+        expect(mockRes.json).toHaveBeenCalledWith({ error: 'Invalid bid amount' });
+    });
+
+    it('should end auction successfully', async () => {
+        const mockResponse = { success: true };
+        endAuction.mockResolvedValue(mockResponse);
+
+        await endAuctionController(mockReq, mockRes);
+
+        expect(mockRes.json).toHaveBeenCalledWith({ message: 'Auction successfully ended' });
+    });
+
+    it('should handle failed auction ending', async () => {
+        const mockResponse = { success: false, statusCode: 400, error: 'Auction not found' };
+        endAuction.mockResolvedValue(mockResponse);
+
+        await endAuctionController(mockReq, mockRes);
+
+        expect(mockRes.status).toHaveBeenCalledWith(400);
+        expect(mockRes.json).toHaveBeenCalledWith({ error: 'Auction not found' });
+    });
+});

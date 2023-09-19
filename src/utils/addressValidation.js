@@ -15,3 +15,5 @@ export const validateEthereumWalletAddress = (address) => {
         throw new Error('Invalid Ethereum wallet address');
     }
 };
+
+export const validateAddresses = (addresses) => addresses.forEach(addr => validateEthereumWalletAddress(addr));
