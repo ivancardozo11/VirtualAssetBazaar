@@ -1,4 +1,5 @@
 import redisClient from '../database/redis/redisConfig.js';
+
 export const getEssentialDetails = (highestBid, auctionDetails) => {
     const collectionAddress = highestBid.nftContractAddress || auctionDetails.nftContractAddress;
     const erc20Address = highestBid.mockERC20Address || auctionDetails.mockERC20Address;

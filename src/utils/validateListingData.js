@@ -67,14 +67,14 @@ export const validateInputData = (listingData) => {
     auctionValidation.validatePriceTypeForAuction(listingData.isAuction, listingData.priceType);
 };
 
-const validateTokenCount = (totalTokensForSale) => {
+export const validateTokenCount = (totalTokensForSale) => {
     if (totalTokensForSale > 1000) throw new Error('Total tokens for sale cannot exceed 1000');
 };
 
-const validateNFTContractId = (nftContractId) => {
+export const validateNFTContractId = (nftContractId) => {
     if (nftContractId > 100000) throw new Error('Token ids cant have more than 100000 in number size');
 };
 
-const validateSoldStatus = (sold) => {
+export const validateSoldStatus = (sold) => {
     if (sold !== false) throw new Error('sold field cant be sold before its listed');
 };

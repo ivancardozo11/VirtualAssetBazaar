@@ -20,10 +20,9 @@ const settlerContractAddress = process.env.SETTLER_CONTRACT_ADDRESS;
 const settlerContractInstance = new web3.eth.Contract(SettlerABI, settlerContractAddress);
 
 const BuyerAccount = web3Buyer.eth.accounts.privateKeyToAccount(`0x${process.env.BUYER_PRIVATE_KEY}`);
-web3Buyer.eth.accounts.wallet.add(BuyerAccount);
+// web3Buyer.eth.accounts.wallet.add(BuyerAccount);
 const account = web3.eth.accounts.privateKeyToAccount(`0x${process.env.METAMASK_PRIVATE_KEY}`);
-web3.eth.accounts.wallet.add(account);
-// Function to validate if the priceType is appropriate for the given isAuction value
+// web3.eth.accounts.wallet.add(account);// Function to validate if the priceType is appropriate for the given isAuction value
 export const validatePriceTypeForAuction = (isAuction, priceType) => {
     // If the listing is not an auction, the priceType must be 'fixed'
     if (isAuction === false && priceType !== 'fixed') {

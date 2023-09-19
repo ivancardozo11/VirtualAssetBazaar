@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const account = web3.eth.accounts.privateKeyToAccount(`0x${process.env.METAMASK_PRIVATE_KEY}`);
-web3.eth.accounts.wallet.add(account);
+// web3.eth.accounts.wallet.add(account);
 
 const SELLER_ADDRESS = process.env.MY_ADDRESS;
 const MOCK_ERC20_ADDRESS = process.env.MOCKERC20_ADDRESS;

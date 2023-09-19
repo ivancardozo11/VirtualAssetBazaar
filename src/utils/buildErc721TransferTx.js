@@ -2,7 +2,7 @@ import web3 from '../utils/web3Config.js';
 import mockErc721ABI from '../utils/mockErc721ABI.js';
 
 const account = web3.eth.accounts.privateKeyToAccount(`0x${process.env.METAMASK_PRIVATE_KEY}`);
-web3.eth.accounts.wallet.add(account);
+// web3.eth.accounts.wallet.add(account);
 const SELLER_ADDRESS = process.env.MY_ADDRESS;
 const GAS_LIMIT = 2000000;
 
