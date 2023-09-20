@@ -15,7 +15,6 @@ describe('Cache Utils', () => {
     it('should get a listing from cache', async () => {
         const mockListing = { id: 1, name: 'Test Listing' };
 
-        // Simulating a cache hit
         redisClient.get.mockResolvedValueOnce(JSON.stringify(mockListing));
 
         const result = await cacheUtils.cacheGetListing(1);
@@ -24,7 +23,6 @@ describe('Cache Utils', () => {
     });
 
     it('should return null for a cache miss', async () => {
-        // Simulating a cache miss
         redisClient.get.mockResolvedValueOnce(null);
 
         const result = await cacheUtils.cacheGetListing(2);

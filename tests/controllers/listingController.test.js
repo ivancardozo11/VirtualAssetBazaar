@@ -43,10 +43,10 @@ describe('Listings Controllers', () => {
     });
 
     afterEach(() => {
-        console.error.mockRestore(); // Restoring original console.error
+        console.error.mockRestore();
         jest.clearAllMocks();
     });
-     it('should create a listing successfully', async () => {
+    it('should create a listing successfully', async () => {
         const mockData = { title: 'Test Listing' };
         createListing.mockResolvedValue(mockData);
 
@@ -67,8 +67,6 @@ describe('Listings Controllers', () => {
         expect(mockRes.status).toHaveBeenCalledWith(200);
         expect(mockRes.json).toHaveBeenCalledWith(mockData);
     });
-
-    // ... Similar tests for "not found" and error cases for getListingController
 
     it('should retrieve all listings successfully', async () => {
         const mockData = [{ title: 'Listing1' }, { title: 'Listing2' }];
@@ -128,7 +126,6 @@ describe('Listings Controllers', () => {
         expect(mockRes.status).toHaveBeenCalledWith(404);
         expect(mockRes.json).toHaveBeenCalledWith({ message: 'Listing not found' });
     });
-
 
     it('should return 500 status for any error during listing deletion', async () => {
         const mockError = new Error('Deletion error');

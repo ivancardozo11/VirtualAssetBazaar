@@ -1,7 +1,6 @@
 import buildNewAuction from '../../src/utils/buildNewAuction.js';
 
 describe('buildNewAuction utility function', () => {
-    // Datos de prueba
     const auctionData = {
         buyerWalletAddress: '0x12345',
         bidAmount: 100,
@@ -19,8 +18,6 @@ describe('buildNewAuction utility function', () => {
 
     it('should build a new auction with the correct initial data', () => {
         const newAuction = buildNewAuction(auctionData);
-
-        // Verifica los datos del contrato y del vendedor
         expect(newAuction.nftContractAddress).toBe(auctionData.nftContractAddress);
         expect(newAuction.mockERC20Address).toBe(auctionData.mockERC20Address);
         expect(newAuction.nftContractId).toBe(auctionData.nftContractId);
@@ -34,7 +31,6 @@ describe('buildNewAuction utility function', () => {
         const newAuction = buildNewAuction(auctionData);
         const initialBid = newAuction.bids[0];
 
-        // Verifica la oferta inicial
         expect(initialBid.bidderAddress).toBe(auctionData.buyerWalletAddress);
         expect(initialBid.bidAmount).toBe(auctionData.bidAmount);
         expect(initialBid.buyerSignature).toBe(auctionData.buyerSignature);
