@@ -15,12 +15,10 @@ export const getEssentialDetails = (highestBid, auctionDetails) => {
 export const getNFTDetails = async (NFT_CONTRACT_ID) => {
     try {
         const redisKey = `listing:${NFT_CONTRACT_ID}`;
-        console.log(`Attempting to get value from Redis with key: ${redisKey}`);
 
         const nftDetails = await redisClient.get(redisKey);
 
         if (!nftDetails) {
-            console.log(`No value found in Redis for key: ${redisKey}`);
             return null;
         }
 

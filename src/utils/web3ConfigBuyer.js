@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import Web3 from 'web3';
 import dotenv from 'dotenv';
 
@@ -15,10 +16,8 @@ web3Buyer.eth.accounts.wallet.add(`0x${buyerPrivateKey}`);
 async function connectAndCheckBalance () {
     try {
         const chainId = await web3Buyer.eth.getChainId();
-        console.log('Connected to Sepolia test network (Chain ID:', chainId + ')');
 
         const balance = await web3Buyer.eth.getBalance(buyerAddress);
-        console.log('Account balance in the buyer wallet number 0x0E6F...A6f::', web3Buyer.utils.fromWei(balance, 'ether'), 'SepoliaETH');
     } catch (error) {
         console.error('Error:', error);
     }

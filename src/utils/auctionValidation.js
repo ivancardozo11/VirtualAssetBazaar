@@ -194,8 +194,6 @@ export const finalizeAuctionOnBlockchain = async (highestBid, auctionDetails) =>
         );
 
         const receipt = await signature.sendSignedTransaction(settlerContractInstance, methodCall, highestBid.bidderAddress, nonce);
-
-        // console.log(`Auction finalized with transaction hash: ${receipt.transactionHash}`);
     } catch (error) {
         console.error(`Auction finalization failed: ${error}`);
         throw error;
