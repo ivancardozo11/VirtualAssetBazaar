@@ -5,7 +5,6 @@ import * as dateValidation from '../utils/dateValidation.js';
 import * as auctionValidation from '../utils/auctionValidation.js';
 import * as errorHandling from '../utils/auctionErrorHandling.js';
 
-// Validate listing fields data types
 export const validateListingData = (listingData) => {
     const schema = Joi.object({
         nftContractAddress: Joi.string().required(),
@@ -29,7 +28,6 @@ export const validateListingData = (listingData) => {
     return errorHandling.handleJoiValidation(validationResult);
 };
 
-// Validate auction fields  data types
 export const validateAuctionFields = (auctionData) => {
     const schema = Joi.object({
         nftContractAddress: Joi.string().required(),

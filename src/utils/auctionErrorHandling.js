@@ -19,7 +19,6 @@ export class ConsecutiveBidError extends AuctionError {
     }
 }
 
-// Custom error class
 export class ValidationError extends Error {
     constructor (message) {
         super(message);
@@ -27,7 +26,6 @@ export class ValidationError extends Error {
     }
 }
 
-// Centralized error handling function
 export const handleJoiValidation = (result) => {
     if (result.error) {
         const errorMessages = result.error.details.map(detail => detail.message).join(', ');

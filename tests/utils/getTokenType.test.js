@@ -1,7 +1,6 @@
 import web3 from '../../src/utils/web3Config.js';
 import getTokenType from '../../src/utils/getTokenType.js';
 
-// Mocking required modules
 jest.mock('../../src/utils/web3Config.js');
 jest.mock('../../src/utils/mockErc721ABI.js', () => ({}));
 jest.mock('../../src/utils/mockErc20ABI.js', () => ({}));

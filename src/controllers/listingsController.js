@@ -64,7 +64,7 @@ export const updateListingController = async (req, res) => {
 export const deleteListingController = async (req, res) => {
     try {
         const listingId = parseInt(req.params.id);
-        const deletedListing = await deleteListing(listingId); // Añadiendo el await aquí
+        const deletedListing = await deleteListing(listingId);
 
         if (deletedListing) {
             res.status(200).json(deletedListing);

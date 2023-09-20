@@ -29,7 +29,7 @@ describe('Listings Controllers', () => {
     let mockReq, mockRes;
 
     beforeEach(() => {
-        jest.spyOn(console, 'error').mockImplementation(() => {}); // Mocking console.error
+        jest.spyOn(console, 'error').mockImplementation(() => {});
 
         mockReq = {
             params: { id: '1' },
