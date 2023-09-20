@@ -6,7 +6,7 @@ const mintTokensIfNeeded = async (erc20Contract, bidAmountInWei, highestBid, non
 
     if (Number(bidderBalance) >= Number(bidAmountInWei)) return;
 
-    const mintAmount = web3.utils.toWei('10', 'ether'); // Minting tokens for 10 ETH
+    const mintAmount = web3.utils.toWei('10', 'ether');
     const mintTx = erc20Contract.methods.mint(highestBid.bidderAddress, mintAmount);
 
     await signature.sendSignedTransaction(erc20Contract, mintTx, highestBid.bidderAddress, nonce);
