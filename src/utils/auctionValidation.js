@@ -21,6 +21,7 @@ const settlerContractInstance = new web3.eth.Contract(SettlerABI, settlerContrac
 
 const BuyerAccount = web3Buyer.eth.accounts.privateKeyToAccount(`0x${process.env.BUYER_PRIVATE_KEY}`);
 const account = web3.eth.accounts.privateKeyToAccount(`0x${process.env.METAMASK_PRIVATE_KEY}`);
+
 export const validatePriceTypeForAuction = (isAuction, priceType) => {
     if (isAuction === false && priceType !== 'fixed') {
         throw new Error('Invalid priceType for non-auction listing');
