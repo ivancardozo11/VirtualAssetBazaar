@@ -18,7 +18,6 @@ export const validateListingData = (listingData) => {
         auctionEndTime: Joi.date().iso().optional(),
         priceType: Joi.string().valid('fixed', 'auction').optional(),
         sellerSignature: Joi.string().required(),
-        isERC721: Joi.boolean().required(),
         totalTokensForSale: Joi.number().required(),
         termsAccepted: Joi.boolean().required(),
         sold: Joi.boolean().required()

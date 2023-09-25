@@ -25,7 +25,6 @@ export const createListing = async (listingData) => {
             auctionEndTime,
             priceType,
             sellerSignature,
-            isERC721,
             totalTokensForSale,
             sold,
             termsAccepted

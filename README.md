@@ -14,6 +14,16 @@
 </div>
 
 
+</p>
+    <p align="center">This code should be reviewed listening the Ramones 😎🤘🎶🎵</p>
+    <p align="center">
+        <a href="https://www.youtube.com/watch?v=PZzEHd7t8lo" target="_blank">
+           Bonzo Goes to Bitburg
+        </a>
+    </p>
+</div>
+
+
 <br><br><br>
 # Project Description:
 
@@ -172,23 +182,14 @@ or
 
 <p>
   <a href="https://docs.google.com/document/d/1NbjSrYLPQVHDGjlv7SqwNYGHc2VAFXYZ9km7AHFE3cg" target="_blank">
-   Purchasing a Token Flow
-  </a>
-</p>
-
-## Use Postman to simulate User A & User B
-
-<p>
-  <a href="https://docs.google.com/document/d/1q1vLbFm-niE6eM1VpSUaf0XsL_2-n3cOmWM9MYb303I" target="_blank">
-   Flow from user A to B
+   Purchasing a Token Flow:
   </a>
 </p>
 
 ## Flow of auctions being finished.
 <p>
   <a href="https://docs.google.com/document/d/1hOnhVVN-BTtDdUnIHz3zYhVQ5mf_A1jcj1RIwNiqdF0" target="_blank">
-   Once users agree on terms through the APIs, send the transaction from
-the backend to settle the trade (calling finishAuction(...args))
+   Ending auctions calling  finishAuction(...args) through  Settler instance.
   </a>
 </p>
 

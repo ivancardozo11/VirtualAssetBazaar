@@ -21,7 +21,6 @@ describe('Validation utility functions', () => {
         auctionEndTime: new Date(Date.now() + 86400000).toISOString(),
         priceType: 'auction',
         sellerSignature: 'signature',
-        isERC721: true,
         totalTokensForSale: 10,
         termsAccepted: true,
         sold: false
