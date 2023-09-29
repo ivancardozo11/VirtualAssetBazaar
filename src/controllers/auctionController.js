@@ -17,6 +17,11 @@ export const createAuctionController = async (req, res) => {
 export const getAllAuctionsController = async (req, res) => {
     try {
         const auctions = await getAllAuctions();
+
+        if (!auctions || auctions.length === 0 || auctions[0] === undefined) {
+            res.status(404).json({ error: 'Failed to retrieve auction - No auction found in the database.' });
+            return;
+        }
         res.status(200).json(auctions);
     } catch (error) {
         res.status(500).json({ error: error.message });

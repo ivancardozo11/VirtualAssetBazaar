@@ -8,18 +8,25 @@ const account = web3.eth.accounts.privateKeyToAccount(`0x${process.env.METAMASK_
 
 const SELLER_ADDRESS = process.env.MY_ADDRESS;
 const MOCK_ERC20_ADDRESS = process.env.MOCKERC20_ADDRESS;
-const GAS_LIMIT = 2000000;
 
 const sendErc20Tokens = async (TOTAL_TOKENS_FOR_SALE, BUYER_WALLET_ADDRESS) => {
     const erc20Contract = new web3.eth.Contract(mockErc20ABI, SELLER_ADDRESS);
     const nonce = await web3.eth.getTransactionCount(SELLER_ADDRESS, 'pending');
     const data = erc20Contract.methods.transfer(MOCK_ERC20_ADDRESS, TOTAL_TOKENS_FOR_SALE).encodeABI();
 
+    const estimatedGas = await web3.eth.estimateGas({
+        to: BUYER_WALLET_ADDRESS,
+        data,
+        from: SELLER_ADDRESS
+    });
+
+    const gasPrice = await web3.eth.getGasPrice();
+
     const transferConfig = {
         nonce,
         to: BUYER_WALLET_ADDRESS,
-        gas: GAS_LIMIT,
-        gasPrice: await web3.eth.getGasPrice(),
+        gas: estimatedGas,
+        gasPrice,
         data
     };
 
