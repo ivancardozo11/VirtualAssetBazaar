@@ -36,6 +36,10 @@ export const getListingController = async (req, res) => {
 export const getAllListingsController = async (req, res) => {
     try {
         const listings = await getAllListings();
+        if (listings.length === 0) {
+            res.status(404).json({ error: 'No listings found' });
+            return;
+        }
         res.status(200).json(listings);
     } catch (error) {
         console.error(`Error retrieving all listings: ${error.message}`);

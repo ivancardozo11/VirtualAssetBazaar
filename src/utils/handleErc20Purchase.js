@@ -6,7 +6,6 @@ const account = web3.eth.accounts.privateKeyToAccount(`0x${process.env.METAMASK_
 web3.eth.accounts.wallet.add(account);
 
 const SELLER_ADDRESS = process.env.MY_ADDRESS;
-const GAS_LIMIT = 2000000;
 
 const handleErc20Purchase = async (nft, BUYER_WALLET_ADDRESS) => {
     const receipt = await sendErc20Tokens(nft.totalTokensForSale, BUYER_WALLET_ADDRESS);
@@ -20,11 +19,21 @@ const handleErc20Purchase = async (nft, BUYER_WALLET_ADDRESS) => {
     }
 
     const paymentAmountWei = web3Buyer.utils.toWei(nft.price.toString(), 'ether');
+
+    const estimatedGas = await web3Buyer.eth.estimateGas({
+        to: SELLER_ADDRESS,
+        from: BUYER_WALLET_ADDRESS,
+        value: paymentAmountWei
+    });
+
+    const gasPrice = await web3Buyer.eth.getGasPrice();
+
     const paymentConfig = {
         from: BUYER_WALLET_ADDRESS,
         to: SELLER_ADDRESS,
         value: paymentAmountWei,
-        gas: GAS_LIMIT
+        gas: estimatedGas,
+        gasPrice
     };
 
     const paymentReceipt = await web3Buyer.eth.sendTransaction(paymentConfig);

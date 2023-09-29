@@ -148,7 +148,6 @@ or
 - *Virtual Bazaar link goes here* 
 
 # See VirtualBazaar code documentation:
-* *This document still in development* 
 <p>
   <a href="https://docs.google.com/document/d/1RjNlJgQHLSLyZ3Y6WRuQCP5nKYYOUX-1hZjWnutg_ro/" target="_blank">
    Link to code documentation
