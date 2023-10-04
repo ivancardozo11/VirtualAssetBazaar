@@ -104,6 +104,12 @@ export const checkAuctionBids = async (nftContractId, bidAmount, buyerWalletAddr
     }
 
     if (existingAuction.bids.length > 0) {
+        const highestBid = Math.max(...existingAuction.bids.map(bid => bid.bidAmount));
+
+        if (bidAmount <= highestBid) {
+            throw new auctionErrorHandling.BidValueError(`Your bid of ${bidAmount} ETH must be higher than the current highest bid of ${highestBid} ETH.`);
+        }
+
         const sameValueBidsFromOtherBidders = existingAuction.bids.filter(bid => bid.bidAmount === bidAmount && bid.bidderAddress !== buyerWalletAddress);
 
         if (sameValueBidsFromOtherBidders.length > 0) {
