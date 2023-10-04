@@ -1,4 +1,8 @@
 /* eslint-disable no-undef */
+import web3 from './web3Config.js';
+import web3Buyer from '../utils/web3ConfigBuyer.js';
+const BuyerAccount = web3Buyer.eth.accounts.privateKeyToAccount(`0x${process.env.BUYER_PRIVATE_KEY}`);
+const account = web3.eth.accounts.privateKeyToAccount(`0x${process.env.METAMASK_PRIVATE_KEY}`);
 export const validateSellerSignature = (signature) => {
     try {
         if (account.privateKey !== signature) {
@@ -9,7 +13,7 @@ export const validateSellerSignature = (signature) => {
     }
 };
 
-export const generateNewSellerSignature = async () => {
+export const generateNewSellerSignature = async (SELLER_ADDRESS) => {
     return await web3.eth.sign('Seller is agreeing to end the auction', SELLER_ADDRESS);
 };
 
