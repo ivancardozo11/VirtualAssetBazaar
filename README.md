@@ -145,7 +145,7 @@ or
 
 # See VirtualBazaar code demo:
 
-- *Virtual Bazaar link goes here* 
+https://www.youtube.com/watch?v=qoiq_kx88Nk
 
 # See VirtualBazaar code documentation:
 <p>
@@ -156,7 +156,7 @@ or
 
 # Bare minimum requirements:
 
-* *This sections takes you to documents where it shows a flow of how is expected the code to bare each requirement:*
+*This sections takes you to documents where it shows a flow of how is expected the code to bare each requirement:*
 
 ## REST API to allow users to list their NFTs with fixed price or as an auction.
 <p>
