@@ -9,18 +9,9 @@ services:
     depends_on:
       - redis
     environment:
-      REDIS_URL: redis://redis:6379
-      CACHE_EXPIRATION_TIME: ${CACHE_EXPIRATION_TIME}
-      REDIS_HOST: redis
-      REDIS_PORT: ${REDIS_PORT}
-      INFURA_PROJECT_ID: ${INFURA_PROJECT_ID}
-      MY_ADDRESS: ${MY_ADDRESS}
-      MOCKERC20_ADDRESS: ${MOCKERC20_ADDRESS}
-      MOCKERC721_ADDRESS: ${MOCKERC721_ADDRESS}
-      SETTLER_CONTRACT_ADDRESS: ${SETTLER_CONTRACT_ADDRESS}
-      METAMASK_PRIVATE_KEY: ${METAMASK_PRIVATE_KEY}
-      BUYER_PRIVATE_KEY: ${BUYER_PRIVATE_KEY}
-      BUYER_ADDRESS: ${BUYER_ADDRESS}
+      - NODE_ENV=production
+    env_file:
+      - .env.docker
 
   redis:
     image: "redis:latest"
