@@ -49,5 +49,3 @@ jobs:
 
     - name: Push Docker Image
       run: docker push ivannCardozo/virtual-bazaar:${{ github.sha }}
-
-    # Opcional: Limpieza de imágenes antiguas (se requiere configuración adicional o scripts)
