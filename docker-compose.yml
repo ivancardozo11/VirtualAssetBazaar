@@ -12,8 +12,16 @@ services:
       - NODE_ENV=production
     env_file:
       - .env.docker
+    networks:
+      - my_act_network
 
   redis:
     image: "redis:latest"
     ports:
       - "6379:6379"
+    networks:
+      - my_act_network
+
+networks:
+  my_act_network:
+    external: true
